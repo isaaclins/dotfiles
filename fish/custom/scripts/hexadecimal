@@ -1,0 +1,116 @@
+#!/bin/bash
+# Author: @isaaclins
+# Date: 2025-06-05
+# Version: 1.0.0
+# Description: Convert text to hexadecimal and vice-versa.
+# Usage: echo 'text' | hex OR hex 'text'
+# Flags:
+#   -e: Encode text to hexadecimal.
+#   -d: Decode hexadecimal to text.
+# Supports explicit encoding (-e), decoding (-d), or auto-detection.
+
+encode_to_hexadecimal() {
+    local text_input="$1"
+    if [ -z "$text_input" ]; then
+        echo # Output a blank line for empty input
+        return 0
+    fi
+    # xxd -p outputs a plain hex dump. sed adds spaces between each byte.
+    local encoded_output
+    encoded_output=$(echo -n "$text_input" | xxd -p | sed 's/\(..\)/\1 /g; s/ $//')
+    echo "$encoded_output"
+    return 0
+}
+
+decode_from_hexadecimal() {
+    local hex_input="$1"
+    local hex_input_no_spaces
+    # Remove all whitespace
+    hex_input_no_spaces=$(echo "$hex_input" | tr -d '[:space:]')
+
+    if [ -z "$hex_input_no_spaces" ]; then
+        echo # Output a blank line for empty hex input
+        return 0
+    fi
+
+    # Validate: only hex characters (0-9, a-f, A-F) and even length
+    if ! [[ "$hex_input_no_spaces" =~ ^[0-9a-fA-F]+$ ]] || (( ${#hex_input_no_spaces} % 2 != 0 )); then
+        echo "Error: Invalid hexadecimal string for decoding. Must contain only hex characters (0-9, a-f, A-F) and its length (without spaces) must be even." >&2
+        return 1 # Indicate failure
+    fi
+
+    # xxd -r -p reverses a plain hex dump
+    local decoded_text
+    decoded_text=$(echo -n "$hex_input_no_spaces" | xxd -r -p)
+    echo "$decoded_text"
+    return 0 # Indicate success
+}
+
+ACTION=""
+OPTIND=1
+while getopts ":de" opt; do
+    case $opt in
+        d)
+            ACTION="decode"
+            ;;
+        e)
+            ACTION="encode"
+            ;;
+        \\?)
+            echo "Error: Invalid option -$OPTARG" >&2
+            echo "Usage: $(basename "$0") [-d|-e] 'input string' OR echo 'input string' | $(basename "$0") [-d|-e]"
+            exit 1
+            ;;
+    esac
+done
+shift $((OPTIND-1))
+
+INPUT_STRING=""
+if [ -p /dev/stdin ]; then
+    INPUT_STRING=$(cat)
+    if [ $# -gt 0 ]; then
+        echo "Error: Received input from both pipe and arguments. Please provide input one way only." >&2
+        echo "Usage: $(basename "$0") [-d|-e] 'input string' OR echo 'input string' | $(basename "$0") [-d|-e]"
+        exit 1
+    fi
+elif [ $# -gt 0 ]; then
+    INPUT_STRING="$*"
+else
+    echo "Usage: $(basename "$0") [-d|-e] 'input string' OR echo 'input string' | $(basename "$0") [-d|-e]"
+    echo "Flags:"
+    echo "  -e: Encode text to hexadecimal."
+    echo "  -d: Decode hexadecimal to text."
+    echo "If no flags are given, the script attempts to auto-detect if the input is hexadecimal or text."
+    exit 1
+fi
+
+if [ "$ACTION" == "encode" ]; then
+    encode_to_hexadecimal "$INPUT_STRING"
+elif [ "$ACTION" == "decode" ]; then
+    if ! decode_from_hexadecimal "$INPUT_STRING"; then
+        exit 1
+    fi
+else # Auto-detect mode
+    if [ -z "$INPUT_STRING" ]; then
+        encode_to_hexadecimal "$INPUT_STRING"
+        exit 0
+    fi
+
+    temp_input_for_check=$(echo "$INPUT_STRING" | tr -d '[:space:]')
+    is_potentially_hex=false
+    if [ -n "$temp_input_for_check" ] && \
+       [[ "$temp_input_for_check" =~ ^[0-9a-fA-F]+$ ]] && \
+       (( ${#temp_input_for_check} % 2 == 0 )); then
+        is_potentially_hex=true
+    fi
+
+    if $is_potentially_hex; then
+        if ! decode_from_hexadecimal "$INPUT_STRING"; then
+            exit 1
+        fi
+    else
+        encode_to_hexadecimal "$INPUT_STRING"
+    fi
+fi
+
+exit 0 
