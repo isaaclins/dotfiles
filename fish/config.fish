@@ -152,27 +152,50 @@ end
 # ============================= Source Files (if in test mode, only source barebones files)================================
 
 # IF IN TEST MODE, SOURCE JUST NECESSARY FILES. IGNORE RUSTSCAN, JAVA, AND OTHER TOOLS.
+# Determine dotfiles_dir safely and prepare custom scripts path
+set -l custom_scripts_dir (dirname (status --current-filename))/custom/scripts
+set -l dotfiles_dir ""
+if set -q DOTFILES_DIR
+    set dotfiles_dir $DOTFILES_DIR
+else if command -sq launchctl
+    set dotfiles_dir (launchctl getenv DOTFILES_DIR)
+end
+if test -z "$dotfiles_dir"
+    set dotfiles_dir "$HOME/.config"
+end
+
+# Export for sourced files
+set -gx DOTFILES_DIR $dotfiles_dir
 
 if test "$USER" != "docker-dev"
     if not contains "$custom_scripts_dir" $fish_user_paths
         set -U fish_user_paths "$custom_scripts_dir" $fish_user_paths
     end
-    source "$HOME/.cargo/env.fish"
-    source $(launchctl getenv DOTFILES_DIR)/fish/custom/alias.fish
-    source $(launchctl getenv DOTFILES_DIR)/fish/custom/functions.fish
-    # errors, TBD: source $(launchctl getenv DOTFILES_DIR)/fish/custom/scripts/**
-    zoxide init fish | source
+    if test -f "$HOME/.cargo/env.fish"
+        source "$HOME/.cargo/env.fish"
+    end
+    if test -f "$dotfiles_dir/fish/custom/alias.fish"
+        source "$dotfiles_dir/fish/custom/alias.fish"
+    end
+    if test -f "$dotfiles_dir/fish/custom/functions.fish"
+        source "$dotfiles_dir/fish/custom/functions.fish"
+    end
+    # errors, TBD: source "$dotfiles_dir"/fish/custom/scripts/**
+    if command -sq zoxide
+        zoxide init fish | source
+    end
 else
     echo "🚀 Test mode is enabled. Only sourcing BareBones files..."
     clear
-    source $(launchctl getenv DOTFILES_DIR)/fish/custom/alias.fish
-    source $(launchctl getenv DOTFILES_DIR)/fish/custom/functions.fish
+    if test -f "$dotfiles_dir/fish/custom/alias.fish"
+        source "$dotfiles_dir/fish/custom/alias.fish"
+    end
+    if test -f "$dotfiles_dir/fish/custom/functions.fish"
+        source "$dotfiles_dir/fish/custom/functions.fish"
+    end
 end
 
 
 # Add custom scripts directory to PATH
-set -l custom_scripts_dir (dirname (status --current-filename))/custom/scripts
-
-
 # Created by `pipx` on 2025-06-16 20:28:54
 set PATH $PATH $HOME/.local/bin $custom_scripts_dir

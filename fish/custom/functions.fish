@@ -459,16 +459,19 @@ function initdocker
     set -a dockerfile_lines 'WORKDIR /home/docker-dev'
     set -a dockerfile_lines 'COPY . .config/fish'
     set -a dockerfile_lines 'RUN chown -R docker-dev:docker-dev .config'
+    set -a dockerfile_lines 'RUN mkdir -p /home/linuxbrew && chown -R docker-dev:docker-dev /home/linuxbrew'
     set -a dockerfile_lines 'USER docker-dev'
     set -a dockerfile_lines 'ENV SHELL=/usr/bin/fish'
-    set -a dockerfile_lines 'ENV PATH="/home/docker-dev/.linuxbrew/bin:/home/docker-dev/.linuxbrew/sbin:/home/docker-dev/.cargo/bin:${PATH}"'
+    set -a dockerfile_lines 'ENV PATH="/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin:/home/docker-dev/.cargo/bin:${PATH}"'
     set -a dockerfile_lines 'ENV HOMEBREW_NO_AUTO_UPDATE=1'
-    set -a dockerfile_lines 'RUN git clone --depth 1 https://github.com/Homebrew/brew.git /home/docker-dev/.linuxbrew'
+    set -a dockerfile_lines 'ENV HOMEBREW_PREFIX=/home/linuxbrew/.linuxbrew'
+    set -a dockerfile_lines 'ENV HOMEBREW_CELLAR=/home/linuxbrew/.linuxbrew/Cellar'
+    set -a dockerfile_lines 'RUN git clone --depth 1 https://github.com/Homebrew/brew.git /home/linuxbrew/.linuxbrew'
     if test (count $packages) -gt 0
         set packages_str (string join " " $packages)
-        set -a dockerfile_lines "RUN /home/docker-dev/.linuxbrew/bin/brew install $packages_str"
+        set -a dockerfile_lines "RUN /home/linuxbrew/.linuxbrew/bin/brew install $packages_str"
     end
-    set -a dockerfile_lines 'RUN mkdir -p .config/fish/conf.d && echo '\''eval "$(/home/docker-dev/.linuxbrew/bin/brew shellenv)"'\'' > .config/fish/conf.d/brew.fish'
+    set -a dockerfile_lines 'RUN mkdir -p .config/fish/conf.d && printf '%s\\n' '\''eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"'\'' '\''set -gx HOMEBREW_PREFIX /home/linuxbrew/.linuxbrew'\'' '\''set -gx HOMEBREW_CELLAR /home/linuxbrew/.linuxbrew/Cellar'\'' > .config/fish/conf.d/brew.fish'
     set -a dockerfile_lines 'SHELL ["/usr/bin/fish", "-l", "-c"]'
     set -a dockerfile_lines 'CMD ["fish"]'
 

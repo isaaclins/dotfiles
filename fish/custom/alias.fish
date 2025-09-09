@@ -1,4 +1,6 @@
-set DOTFILES_DIR (echo $(launchctl getenv DOTFILES_DIR))
+if not set -q DOTFILES_DIR
+    set -gx DOTFILES_DIR "$HOME/.config"
+end
 # ============================= Useful Abbreviations ================================
 
 
@@ -8,8 +10,8 @@ abbr -a l 'ls -A'
 abbr -a fid 'ls | grep'
 
 # Reload config
-abbr -a reload 'source $(launchctl getenv DOTFILES_DIR)/fish/config.fish && clear && echo (set_color green)"⟳ RELOADED" (set_color normal)'
-abbr -a r 'source $(launchctl getenv DOTFILES_DIR)/fish/config.fish && clear && echo (set_color green)"⟳ RELOADED" (set_color normal)'
+abbr -a reload 'source $DOTFILES_DIR/fish/config.fish && clear && echo (set_color green)"⟳ RELOADED" (set_color normal)'
+abbr -a r 'source $DOTFILES_DIR/fish/config.fish && clear && echo (set_color green)"⟳ RELOADED" (set_color normal)'
 
 # Clear screen
 abbr -a c 'clear'
@@ -24,7 +26,7 @@ abbr -a ga 'git add '
 abbr -a gaa 'git add .'
 abbr -a gpll 'git pull'
 # open config
-abbr -a conf "open -a 'Cursor' $(launchctl getenv DOTFILES_DIR)/fish/"
+abbr -a conf "open -a 'Cursor' $DOTFILES_DIR/fish/"
 abbr -a cur "open -a 'Cursor' ."
 # The Fuck
 thefuck --alias | source
@@ -41,7 +43,7 @@ abbr -a cdd 'z -'
 # Lazygit
 abbr -a lg 'lazygit'  
 # Neofetch
-abbr -a rcool 'source $(launchctl getenv DOTFILES_DIR)/fish/config.fish && clear  && neofetch'
+abbr -a rcool 'source $DOTFILES_DIR/fish/config.fish && clear  && neofetch'
 # spicetify
 abbr -a spot 'spicetify restore backup apply && spicetify apply'
 # fzf
