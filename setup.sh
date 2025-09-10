@@ -43,6 +43,7 @@ Usage: ./${SCRIPT_NAME} [options]
 
 Options:
   -y, --yes               Run non-interactively; assume "yes" to prompts
+  -d, --dotfiles-dir PATH Use PATH as DOTFILES_DIR
   --set-default-fish      Set fish as the default shell (may prompt for sudo)
   -h, --help              Show this help message and exit
 
@@ -54,11 +55,22 @@ EOF
 
 YES=0
 SET_DEFAULT_FISH=0
+DOTFILES_DIR_ARG=0
 
 while [ $# -gt 0 ]; do
     case "$1" in
         -y|--yes)
             YES=1
+            ;;
+        -d|--dotfiles-dir)
+            if [ $# -lt 2 ]; then
+                log_error "Missing PATH for $1"
+                usage
+                exit 1
+            fi
+            DOTFILES_DIR="$2"
+            DOTFILES_DIR_ARG=1
+            shift
             ;;
         --set-default-fish)
             SET_DEFAULT_FISH=1
@@ -82,7 +94,7 @@ log_info "🚀 Starting dotfiles setup..."
 DEFAULT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DOTFILES_DIR="${DOTFILES_DIR:-$DEFAULT_DIR}"
 
-if [ $YES -eq 0 ]; then
+if [ $YES -eq 0 ] && [ ${DOTFILES_DIR_ARG:-0} -eq 0 ]; then
     read -rp "Enter the path to your dotfiles directory [${DOTFILES_DIR}]: " _input || true
     if [ -n "${_input:-}" ]; then
         DOTFILES_DIR="${_input}"
