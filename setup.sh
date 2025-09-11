@@ -52,7 +52,6 @@ Environment:
                           containing this script if not set.
 EOF
 }
-
 YES=0
 SET_DEFAULT_FISH=0
 DOTFILES_DIR_ARG=0
@@ -226,6 +225,56 @@ install_cask_with_fallback() {
     return 1
 }
 
+mas_signed_in() {
+    command -v mas >/dev/null 2>&1 || return 1
+    mas account >/dev/null 2>&1
+}
+
+mas_app_installed() {
+    local app_id="$1"
+    command -v mas >/dev/null 2>&1 || return 1
+    mas list | awk '{print $1}' | grep -qx "$app_id"
+}
+
+install_mas_app() {
+    local app_name="$1"
+    local app_id="$2"
+    # Ensure mas is available
+    if ! command -v mas >/dev/null 2>&1; then
+        install_formula mas || true
+    fi
+
+    if ! command -v mas >/dev/null 2>&1; then
+        log_warn "mas CLI not available; cannot install ${app_name} from App Store."
+        return 1
+    fi
+
+    if ! mas_signed_in; then
+        log_warn "Not signed into the Mac App Store. Skipping ${app_name} installation."
+        return 0
+    fi
+
+    if mas_app_installed "$app_id"; then
+        log_ok "${app_name} is already installed via App Store."
+        return 0
+    fi
+
+    if [ $YES -eq 1 ]; then
+        log_info "Installing ${app_name} from the Mac App Store..."
+        mas install "$app_id" || log_warn "Failed to install ${app_name} via mas."
+        return 0
+    fi
+
+    while true; do
+        read -rp "Install ${app_name} from the Mac App Store now? (y/n): " yn
+        case $yn in
+            [Yy]*) log_info "Installing ${app_name}..."; mas install "$app_id" || log_warn "Failed to install ${app_name} via mas."; break ;;
+            [Nn]*) log_warn "Skipping ${app_name} installation."; break ;;
+            *) echo "Please answer yes (y) or no (n)." ;;
+        esac
+    done
+}
+
 ensure_homebrew
 
 # Core tools
@@ -237,7 +286,10 @@ install_cask ghostty
 install_cask cursor
 install_cask_with_fallback raycast
 install_cask_with_fallback zen zen-browser
-install_cask_with_fallback amphetamine
+if ! install_cask_with_fallback amphetamine; then
+    # Amphetamine is App Store-only; fall back to MAS (App ID 937984704)
+    install_mas_app "Amphetamine" 937984704 || true
+fi
 install_cask_with_fallback alt-tab
 install_cask_with_fallback hammerspoon
 install_cask_with_fallback middleclick
