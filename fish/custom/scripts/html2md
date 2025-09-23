@@ -1,0 +1,54 @@
+#!/bin/sh
+
+# A script to convert an HTML page to a Markdown document.
+# It fetches HTML from a URL and uses pandoc to convert it.
+
+set -eu
+
+# --- Dependencies Check ---
+if ! command -v pandoc >/dev/null 2>&1; then
+  echo "Error: 'pandoc' is not installed." >&2
+  echo "Please install it to proceed. On macOS, you can use Homebrew: brew install pandoc" >&2
+  exit 1
+fi
+
+if ! command -v curl >/dev/null 2>&1; then
+  echo "Error: 'curl' is not installed." >&2
+  exit 1
+fi
+
+# --- Argument Check ---
+if [ "$#" -eq 0 ] || [ "$#" -gt 2 ] || [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+  cat <<EOF
+Usage: $(basename "$0") <URL|FILE> [OUTPUT_FILE]
+
+Converts an HTML page from a URL or a local file to Markdown.
+If OUTPUT_FILE is not specified, it prints to standard output.
+
+Examples:
+  $(basename "$0") https://example.com page.md
+  $(basename "$0") /path/to/your/file.html page.md
+  $(basename "$0") https://example.com > page.md
+EOF
+  exit 1
+fi
+
+INPUT="$1"
+OUTPUT_FILE="${2:-}" # Default to empty if not set
+
+# --- Main Logic ---
+process_input() {
+  if [ -f "$1" ]; then
+    # Handle local file
+    cat "$1" | pandoc --from html --to gfm --wrap=none
+  else
+    # Handle URL
+    curl -sL --fail "$1" | pandoc --from html --to gfm --wrap=none
+  fi
+}
+
+if [ -n "$OUTPUT_FILE" ]; then
+  process_input "$INPUT" > "$OUTPUT_FILE"
+else
+  process_input "$INPUT"
+fi

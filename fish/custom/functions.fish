@@ -673,3 +673,16 @@ function toggle
     end
 end
 
+
+function copy_last_output
+    # Parse the session log, grab the last block after a prompt
+    awk '
+    /^┌─\[.*\]─/ { block=""; next }
+    { block = block $0 ORS }
+    END { printf "%s", block }
+    ' /tmp/fish_session.log | pbcopy
+end
+
+function fish_user_key_bindings
+    bind super-shift-c copy_last_output
+end

@@ -199,3 +199,20 @@ end
 # Add custom scripts directory to PATH
 # Created by `pipx` on 2025-06-16 20:28:54
 set PATH $PATH $HOME/.local/bin $custom_scripts_dir
+
+# pnpm
+set -gx PNPM_HOME "/Users/isaaclins/Library/pnpm"
+if not string match -q -- $PNPM_HOME $PATH
+  set -gx PATH "$PNPM_HOME" $PATH
+end
+# pnpm end
+
+
+
+# Start a session logger (macOS `script` is BSD, so no -f option)
+if not set -q FISH_LOG_ACTIVE
+    set -x FISH_LOG_ACTIVE 1
+    script -q /tmp/fish_session.log
+end
+
+
