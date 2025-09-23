@@ -9,6 +9,9 @@
 # ghostty +list-fonts
 
 #
+#
+#
+#
 
 # This configuration can be repeated multiple times to specify preferred
 
@@ -500,7 +503,7 @@ grapheme-width-method = unicode
 
 # will override the colors specified in the theme.
 
-theme = catppuccin-frappe
+theme = Catppuccin Frappe
 
 # Background color for the window.
 
@@ -1689,6 +1692,10 @@ keybind = ctrl+shift+tab=previous_tab
 
 keybind = ctrl+shift+i=inspector:toggle
 
+# Ghostty Configuration
+
+# Option + Backspace: Delete previous word
+keybind = opt+backspace=text:\x17
 
 
 # Horizontal window padding. This applies padding between the terminal cells
@@ -3184,11 +3191,9 @@ gtk-titlebar = true
 
 # back to `top`.
 
-gtk-tabs-location = top
 
 # Determines the appearance of the top and bottom bars when using the
 
-# adwaita tab bar. This requires `gtk-adwaita` to be enabled (it is
 
 # by default).
 
@@ -3210,7 +3215,7 @@ gtk-tabs-location = top
 
 # Changing this value at runtime will only affect new windows.
 
-adw-toolbar-style = raised
+
 
 # If `true` (default), then the Ghostty GTK tabs will be "wide." Wide tabs
 
@@ -3246,7 +3251,6 @@ gtk-wide-tabs = true
 
 # libadwaita support.
 
-gtk-adwaita = true
 
 # If `true` (default), applications running in the terminal can show desktop
 
