@@ -26,7 +26,7 @@ abbr -a ga 'git add '
 abbr -a gaa 'git add .'
 abbr -a gpll 'git pull'
 # open config
-abbr -a conf "open -a 'Cursor' $DOTFILES_DIR/fish/"
+abbr -a conf "open -a 'Cursor' $DOTFILES_DIR"
 abbr -a cur "open -a 'Cursor' ."
 # The Fuck
 thefuck --alias | source
