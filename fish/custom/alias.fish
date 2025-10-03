@@ -62,6 +62,7 @@ abbr -a lg 'lazygit'
 
 abbr -a nrd 'npm run dev'
 abbr -a nrs 'npm run start'
+abbr -a rh 'killall Hammerspoon && open -a Hammerspoon'
 end
 
 
