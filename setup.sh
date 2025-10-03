@@ -68,11 +68,9 @@ else
     echo "✅ Homebrew is already installed."
 fi
 
-# check if fish is installed
 ask_install "fish" "brew install fish"
-
-# check if Ghostty is installed
 ask_install "ghostty" "brew install ghostty"
-
-# check if Cursor is installed
 ask_install "cursor" "brew install cursor"
+ask_install "hammerspoon" "brew install hammerspoon"
+defaults write org.hammerspoon.Hammerspoon MJConfigFile "$DOTFILES_DIR/hammerspoon/init.lua"
+
