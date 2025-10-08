@@ -63,6 +63,9 @@ abbr -a lg 'lazygit'
 abbr -a nrd 'npm run dev'
 abbr -a nrs 'npm run start'
 abbr -a rh 'killall Hammerspoon >/dev/null 2>&1; open -a Hammerspoon && open -a Hammerspoon'
+
+abbr -a ff 'fastfetch '
+
 end
 
 
