@@ -239,8 +239,14 @@ end
 
 
 function cports
-    set ip_address "127.0.0.1"
-    echo "Scanning ports..."
+    # Use provided IP/domain or default to localhost
+    if test (count $argv) -gt 0
+        set ip_address $argv[1]
+    else
+        set ip_address "127.0.0.1"
+    end
+    
+    echo "Scanning ports on $ip_address..."
 
     # Run rustscan and filter only the summary lines
     set results (rustscan -a $ip_address -r 1-65535 --ulimit 65535 $extra_args | grep -E '^[0-9]+/tcp\s+open')
@@ -696,4 +702,12 @@ end
 
 function fish_user_key_bindings
     bind super-shift-c copy_last_output
+end
+
+function fff
+    while true
+        clear
+        fastfetch
+        sleep 1
+    end
 end
