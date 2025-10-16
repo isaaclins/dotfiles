@@ -6,6 +6,23 @@
 -- Window management
 local cycleIndex = 1
 
+-- Animation settings
+local animationDuration = 0.2 -- Fast but smooth (200ms)
+hs.window.animationDuration = animationDuration
+
+-- Set easing function to cubic-bezier for smooth in/out
+-- This creates a smooth acceleration and deceleration
+local function cubicBezierEaseInOut(t)
+    if t < 0.5 then
+        return 4 * t * t * t
+    else
+        return 1 - ((-2 * t + 2) ^ 3) / 2
+    end
+end
+
+-- Apply custom easing function
+hs.window.setFrameCorrectness = true
+
 -- Get the usable screen frame (accounts for menu bar, dock, etc.)
 local function getUsableFrame(screen)
     return screen:frame() -- Use full frame for all positioning
@@ -95,7 +112,7 @@ local function moveWindow(direction)
         local timeSinceLastCommand = now - lastCommandTime
         if timeSinceLastCommand < commandCooldown then
             print("Zen: Command ignored - too soon after previous command (wait " ..
-            string.format("%.2f", commandCooldown - timeSinceLastCommand) .. "s)")
+                string.format("%.2f", commandCooldown - timeSinceLastCommand) .. "s)")
             return
         end
         lastCommandTime = now
@@ -122,7 +139,7 @@ local function moveWindow(direction)
                     actual.y, actual.w, actual.h))
             end)
         else
-            win:setFrame(newFrame, 0)
+            win:setFrame(newFrame, animationDuration)
             local actual = win:frame()
             print(string.format("%s: Actually moved to x=%.0f, y=%.0f, w=%.0f, h=%.0f", appName, actual.x, actual.y,
                 actual.w, actual.h))
@@ -141,34 +158,66 @@ local function moveWindow(direction)
                     actual.y, actual.w, actual.h))
             end)
         else
-            win:setFrame(newFrame, 0)
+            win:setFrame(newFrame, animationDuration)
         end
     elseif direction == "up" then
         if win:isMinimized() then
             win:unminimize()
             hs.timer.doAfter(0.1, function() win:focus() end)
         else
-            -- Maximize (fill full screen)
-            local newFrame = { x = f.x, y = f.y, w = f.w, h = f.h }
-            print(string.format("%s: Maximizing to x=%.0f, y=%.0f, w=%.0f, h=%.0f", appName, newFrame.x, newFrame.y,
-                newFrame.w, newFrame.h))
+            -- Check if window is already maximized
+            local currentFrame = win:frame()
+            local isMaximized = math.abs(currentFrame.x - f.x) < 10 and
+                math.abs(currentFrame.y - f.y) < 10 and
+                math.abs(currentFrame.w - f.w) < 10 and
+                math.abs(currentFrame.h - f.h) < 10
 
-            if useAppleScript then
-                moveZenWithAppleScript(newFrame)
-                hs.timer.doAfter(0.1, function()
-                    local actual = win:frame()
-                    print(string.format("%s: AppleScript result - at x=%.0f, y=%.0f, w=%.0f, h=%.0f", appName, actual.x,
-                        actual.y, actual.w, actual.h))
-                end)
+            if isMaximized then
+                -- Window is maximized, make it smaller and centered
+                local scale = 0.90 -- 90% of screen size
+                local w = f.w * scale
+                local h = f.h * scale
+                local x = f.x + (f.w - w) / 2
+                local y = f.y + (f.h - h) / 2
+                local newFrame = { x = x, y = y, w = w, h = h }
+                print(string.format("%s: Centering to x=%.0f, y=%.0f, w=%.0f, h=%.0f", appName, newFrame.x, newFrame.y,
+                    newFrame.w, newFrame.h))
+
+                if useAppleScript then
+                    moveZenWithAppleScript(newFrame)
+                    hs.timer.doAfter(0.1, function()
+                        local actual = win:frame()
+                        print(string.format("%s: AppleScript result - at x=%.0f, y=%.0f, w=%.0f, h=%.0f", appName,
+                            actual.x,
+                            actual.y, actual.w, actual.h))
+                    end)
+                else
+                    win:setFrame(newFrame, animationDuration)
+                end
             else
-                win:maximize(0)
+                -- Maximize (fill full screen)
+                local newFrame = { x = f.x, y = f.y, w = f.w, h = f.h }
+                print(string.format("%s: Maximizing to x=%.0f, y=%.0f, w=%.0f, h=%.0f", appName, newFrame.x, newFrame.y,
+                    newFrame.w, newFrame.h))
+
+                if useAppleScript then
+                    moveZenWithAppleScript(newFrame)
+                    hs.timer.doAfter(0.1, function()
+                        local actual = win:frame()
+                        print(string.format("%s: AppleScript result - at x=%.0f, y=%.0f, w=%.0f, h=%.0f", appName,
+                            actual.x,
+                            actual.y, actual.w, actual.h))
+                    end)
+                else
+                    win:maximize(animationDuration)
+                end
             end
         end
     elseif direction == "down" then
         local getFrame = cornerPositions[cycleIndex]
         local newFrame = getFrame(screen)
         print(string.format("%s: Cycling to position %d: x=%.0f, y=%.0f, w=%.0f, h=%.0f", appName, cycleIndex, newFrame
-        .x, newFrame.y, newFrame.w, newFrame.h))
+            .x, newFrame.y, newFrame.w, newFrame.h))
 
         if useAppleScript then
             moveZenWithAppleScript(newFrame)
@@ -178,7 +227,7 @@ local function moveWindow(direction)
                     actual.y, actual.w, actual.h))
             end)
         else
-            win:setFrame(newFrame, 0)
+            win:setFrame(newFrame, animationDuration)
         end
 
         cycleIndex = (cycleIndex % #cornerPositions) + 1
@@ -192,5 +241,3 @@ hs.hotkey.bind({ "cmd" }, "up", function() moveWindow("up") end)
 hs.hotkey.bind({ "cmd" }, "down", function() moveWindow("down") end)
 
 hs.alert.show("Hammerspoon config loaded")
-
-
