@@ -63,7 +63,7 @@
     {
       "type": "cpuusage",
       "key": "{$1}\u001b[32m USAGE\u001b[0m",
-      "format": "[{avg}]"
+      "format": "            [{avg}]"
     },
     {
       "type": "memory",
