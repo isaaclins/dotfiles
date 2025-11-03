@@ -6,7 +6,7 @@
   "display": {
     "separator": " ",
     "key": {
-      "width": 0
+      "width": 25
     },
     "bar": {
       "border": null,
@@ -17,7 +17,7 @@
       "width": 30
     },
     "constants": [
-      "\u001b[0m│                                                      │\u001b[55D"
+      "\u001b[0m                                                       \u001b[55D"
     ]
   },
   "modules": [
