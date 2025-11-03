@@ -27,13 +27,13 @@
     },
     {
       "type": "title",
-      "key": "{$1}\u001b[34m > USERNAME\u001b[0m",
-      "format": "{user-name} <"
+      "key": "{$1}\u001b[34m  USERNAME\u001b[0m",
+      "format": "{user-name} "
     },
     {
       "type": "localip",
-      "key": "{$1}\u001b[34m > HOST IP\u001b[0m",
-      "format": "{ipv4} <",
+      "key": "{$1}\u001b[34m  HOST IP\u001b[0m",
+      "format": "{ipv4} ",
       "showIpv4": true,
       "showIpv6": false,
       "showPrefixLen": false,
@@ -63,7 +63,7 @@
     {
       "type": "cpuusage",
       "key": "{$1}\u001b[32m    > USAGE\u001b[0m",
-      "format": "            [{avg}]"
+      "format": "                         [{avg}]"
     },
     {
       "type": "memory",
@@ -78,7 +78,7 @@
     {
       "type": "memory",
       "key": "{$1}\u001b[32m    > USAGE\u001b[0m",
-      "format": "{used} / {total} [{percentage}]"
+      "format": "{used} / {total}    [{percentage}]"
     },
     {
       "type": "command",
@@ -96,7 +96,7 @@
     {
       "type": "disk",
       "key": "{$1}\u001b[32m DISKSPACE\u001b[0m",
-      "format": "{size-used} / {size-total} [{size-percentage}]",
+      "format": "{size-used} / {size-total}  [{size-percentage}]",
       "folders": "/"
     },
     {
@@ -122,6 +122,11 @@
       "format": "{result}"
     },
     {
+      "type": "title",
+      "key": "{$1}\u001b[35m SHELL DIRECTORY\u001b[0m",
+      "format": "{user-shell} "
+    },
+    {
       "type": "packages",
       "key": "{$1}\u001b[35m BREW\u001b[0m",
       "format": "{brew-all} pkgs",
@@ -134,14 +139,14 @@
     },
     {
       "type": "sound",
-      "key": "{$1}\u001b[35m SOUND OUTPUT\u001b[0m",
+      "key": "{$1}\u001b[35m SOUND OUTPUT/VOLUME\u001b[0m",
       "soundType": "main",
-      "format": "{name}{?volume-percentage} [{volume-percentage}]{?}"
+      "format": "{name}{?volume-percentage}  /   [{volume-percentage}]{?}"
     },
     {
       "type": "uptime",
       "key": "{$1}\u001b[35m UPTIME\u001b[0m",
-      "format": "{days}d {hours}h {minutes}m"
+      "format": "{days} days, {hours} hours and {minutes} minutes"
     },
     {
       "type": "custom",
