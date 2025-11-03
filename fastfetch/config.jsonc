@@ -1,110 +1,164 @@
 {
-  "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/dev/doc/json_schema.json",
+  "logo": {
+    "type": "command-raw",
+    "source": "ascii-image-converter ~/.config/fastfetch/barbhut.png --dimensions 75,30 --color -m ' barbhut' -c"
+  },
   "display": {
     "separator": " ",
     "key": {
-      "type": "both"
+      "width": 0
     },
     "bar": {
-      "border": {
-        "left": "\uee00",
-        "leftElapsed": "\uee03",
-        "right": "\uee02",
-        "rightElapsed": "\uee05"
-      },
+      "border": null,
       "char": {
-        "total": "\uee01",
-        "elapsed": "\uee04"
+        "elapsed": "█",
+        "total": "░"
       },
-      "color": {
-        "total": null
-      }
+      "width": 30
     },
-    "percent": {
-      "type": ["bar", "bar-monochrome"]
-    }
-  },
-  "logo": {
-    "source": "$HOME/.config/fastfetch/logo.txt",
-    "type": "file",
-    "color": {
-      "1": "white",
-      "2": "red",
-      "3": "38;2;23;147;209"
-    }
+    "constants": [
+      "\u001b[0m│                                                      │\u001b[55D"
+    ]
   },
   "modules": [
     {
-      "type": "disk",
-      "folders": "/",
-      "key": "DSK"
+      "type": "custom",
+      "format": "\u001b[34m╭──────────────────────── Host ────────────────────────╮\u001b[0m"
     },
     {
-      "type": "battery",
-      "key": "BAT"
-    },
-    {
-      "type": "memory",
-      "key": "MEM"
-    },
-    {
-      "type": "shell",
-      "key": "Shell",
-      "format": "{pretty-name}  [v{version}] [PID:{pid}]"
-    },
-    {
-      "type": "terminal",
-      "key": "Terminal",
-      "format": "{pretty-name}  [{version}] [PID:{pid}]"
-    },
-    {
-      "type": "dns",
-      "key": "Router IP",
-      "showType": "ipv4"
+      "type": "title",
+      "key": "{$1}\u001b[34m > USERNAME\u001b[0m",
+      "format": "{user-name} <"
     },
     {
       "type": "localip",
-      "key": "Client IP",
-      "format": "{ipv4}"
+      "key": "{$1}\u001b[34m > HOST IP\u001b[0m",
+      "format": "{ipv4} <",
+      "showIpv4": true,
+      "showIpv6": false,
+      "showPrefixLen": false,
+      "showMac": false,
+      "defaultRouteOnly": true,
+      "compact": true
+    },
+    {
+      "type": "custom",
+      "format": "\u001b[34m╰──────────────────────────────────────────────────────╯\u001b[0m"
+    },
+    "break",
+    {
+      "type": "custom",
+      "format": "\u001b[32m╭────────────────────── Hardware ──────────────────────╮\u001b[0m"
+    },
+    {
+      "type": "cpuusage",
+      "key": "{$1}\u001b[32m CPU\u001b[0m",
+      "format": "{avg-bar}",
+      "percent": {
+        "type": ["bar"],
+        "green": 30,
+        "yellow": 70
+      }
+    },
+    {
+      "type": "cpuusage",
+      "key": "{$1}\u001b[32m USAGE\u001b[0m",
+      "format": "[{avg}]"
     },
     {
       "type": "memory",
-      "key": "Memory",
-      "format": "{used} / {total} [{percentage}]",
+      "key": "{$1}\u001b[32m MEMORY\u001b[0m",
+      "format": "{percentage-bar}",
       "percent": {
-        "type": ["num"]
+        "type": ["bar"],
+        "green": 30,
+        "yellow": 70
       }
     },
     {
       "type": "memory",
-      "key": "Usage",
-      "format": "",
-      "percent": {
-        "type": ["bar"]
-      }
+      "key": "{$1}\u001b[32m USAGE\u001b[0m",
+      "format": "{used} / {total} [{percentage}]"
     },
     {
-      "type": "cpu",
-      "key": "CPU",
-      "format": "{name}"
+      "type": "command",
+      "key": "{$1}\u001b[32m BATTERY\u001b[0m",
+      "shell": "/bin/sh",
+      "param": "-c",
+      "text": "perc=$(pmset -g batt | grep -Eo '[0-9]+%' | head -n1 | tr -d '%'); [ -n \"$perc\" ] || perc=0; python3 -c \"import math; width=30; perc=$perc; filled=int(round(width*perc/100)); filled=max(0, min(width, filled)); bar='░'*(width-filled)+'█'*filled; print(bar, end='')\"",
+      "format": "{result}"
     },
     {
-      "type": "cpu",
-      "key": "Cores",
-      "format": "{cores-physical} PHYSICAL CORES / {cores-logical} THREADS",
-      "showPeCoreCount": false
-    },
-
-    {
-      "type": "users",
-      "key": "Last Login",
-      "format": "{login-time}{?client-ip} ({client-ip})",
-      "myselfOnly": true
+      "type": "battery",
+      "key": "{$1}\u001b[32m USAGE\u001b[0m",
+      "format": "[{capacity}]{?status} [{status}]{?}"
     },
     {
-      "type": "datetime",
-      "key": "Datetime",
-      "format": "{year}-{month-pretty}-{day-in-month} {hour-pretty}:{minute-pretty}:{second-pretty}  [{weekday}] [W{week}] [UTC{offset-from-utc}]"
+      "type": "disk",
+      "key": "{$1}\u001b[32m DISKSPACE\u001b[0m",
+      "format": "{size-used} / {size-total} [{size-percentage}]",
+      "folders": "/"
+    },
+    {
+      "type": "custom",
+      "format": "\u001b[32m╰──────────────────────────────────────────────────────╯\u001b[0m"
+    },
+    "break",
+    {
+      "type": "custom",
+      "format": "\u001b[35m╭────────────────────── Software ──────────────────────╮\u001b[0m"
+    },
+    {
+      "type": "os",
+      "key": "{$1}\u001b[35m OS\u001b[0m",
+      "format": "{name}{?codename} {codename}{?} ({version})"
+    },
+    {
+      "type": "command",
+      "key": "{$1}\u001b[35m TERMINAL\u001b[0m",
+      "shell": "/bin/sh",
+      "param": "-c",
+      "text": "term=${TERM_PROGRAM:-${TERM:-unknown}}; shell=$(basename \"$SHELL\" 2>/dev/null || echo shell); printf '%s / %s' \"$term\" \"$shell\"",
+      "format": "{result}"
+    },
+    {
+      "type": "packages",
+      "key": "{$1}\u001b[35m BREW\u001b[0m",
+      "format": "{brew-all} pkgs",
+      "combined": true
+    },
+    {
+      "type": "media",
+      "key": "{$1}\u001b[35m LISTENING TO\u001b[0m",
+      "format": "{?combined}{combined}{?}{/combined}<media>{/}"
+    },
+    {
+      "type": "sound",
+      "key": "{$1}\u001b[35m SOUND OUTPUT\u001b[0m",
+      "soundType": "main",
+      "format": "{name}{?volume-percentage} [{volume-percentage}]{?}"
+    },
+    {
+      "type": "uptime",
+      "key": "{$1}\u001b[35m UPTIME\u001b[0m",
+      "format": "{days}d {hours}h {minutes}m"
+    },
+    {
+      "type": "custom",
+      "format": "\u001b[35m╰──────────────────────────────────────────────────────╯\u001b[0m"
+    },
+    "break",
+    {
+      "type": "custom",
+      "format": "\u001b[35m╭───────────────────── SIGNATURE ─────────────────────╮\u001b[0m"
+    },
+    {
+      "type": "custom",
+      "format": "~ <;^) <"
+    },
+    {
+      "type": "custom",
+      "format": "\u001b[35m╰─────────────────────────────────────────────────────╯\u001b[0m"
     }
   ]
 }
