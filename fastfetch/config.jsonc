@@ -14,7 +14,7 @@
         "elapsed": "█",
         "total": "░"
       },
-      "width": 30
+      "width": 10
     },
     "constants": [
       "\u001b[0m                                                       \u001b[55D"
@@ -53,7 +53,7 @@
     {
       "type": "cpuusage",
       "key": "{$1}\u001b[32m CPU\u001b[0m",
-      "format": "{avg-bar}",
+      "format": "                    {avg-bar}",
       "percent": {
         "type": ["bar"],
         "green": 30,
@@ -68,7 +68,7 @@
     {
       "type": "memory",
       "key": "{$1}\u001b[32m MEMORY\u001b[0m",
-      "format": "{percentage-bar}",
+      "format": "                    {percentage-bar}",
       "percent": {
         "type": ["bar"],
         "green": 30,
@@ -85,8 +85,8 @@
       "key": "{$1}\u001b[32m BATTERY\u001b[0m",
       "shell": "/bin/sh",
       "param": "-c",
-      "text": "perc=$(pmset -g batt | grep -Eo '[0-9]+%' | head -n1 | tr -d '%'); [ -n \"$perc\" ] || perc=0; python3 -c \"import math; width=30; perc=$perc; filled=int(round(width*perc/100)); filled=max(0, min(width, filled)); bar='░'*(width-filled)+'█'*filled; print(bar, end='')\" | rev",
-      "format": "{result}"
+      "text": "perc=$(pmset -g batt | grep -Eo '[0-9]+%' | head -n1 | tr -d '%'); [ -n \"$perc\" ] || perc=0; python3 -c \"import math; width=10; perc=$perc; filled=int(round(width*perc/100)); filled=max(0, min(width, filled)); bar='░'*(width-filled)+'█'*filled; print(bar, end='')\" | rev",
+      "format": "{$1}\u001b[32m                    {result} \u001b[0m"
     },
     {
       "type": "battery",
