@@ -700,8 +700,31 @@ function copy_last_output
     ' /tmp/fish_session.log | pbcopy
 end
 
+function __fish_history_up_fix
+    # Save cursor position, move up 2 lines (prompt height), clear everything below, restore, then navigate
+    printf '\e7'        # Save cursor position
+    printf '\e[2A'      # Move up 2 lines (your prompt is 2 lines)
+    printf '\e[J'       # Clear from cursor to end of screen
+    printf '\e8'        # Restore cursor position
+    commandline -f history-search-backward
+    commandline -f force-repaint
+end
+
+function __fish_history_down_fix
+    # Save cursor position, move up 2 lines (prompt height), clear everything below, restore, then navigate
+    printf '\e7'        # Save cursor position
+    printf '\e[2A'      # Move up 2 lines (your prompt is 2 lines)
+    printf '\e[J'       # Clear from cursor to end of screen
+    printf '\e8'        # Restore cursor position
+    commandline -f history-search-forward
+    commandline -f force-repaint
+end
+
 function fish_user_key_bindings
     bind super-shift-c copy_last_output
+    # Fix multi-line command history rendering with full screen repaint
+    bind \e\[A __fish_history_up_fix
+    bind \e\[B __fish_history_down_fix
 end
 
 function fff
