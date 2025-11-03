@@ -13,4 +13,7 @@ fish/config.fish
 fish/custom/alias.fish
 fish/custom/functions.fish
 ghostty/config
+fastfetch/config.jsonc 
+fastfetch/barbhut.png <- png image file of a barb hut
+fastfetch/laugh.gif <- gif file of a laugh
 ```
