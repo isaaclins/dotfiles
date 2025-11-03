@@ -10,11 +10,10 @@ abbr -a l 'ls -A'
 abbr -a fid 'ls | grep'
 
 # Reload config
-abbr -a reload 'source $DOTFILES_DIR/fish/config.fish && clear && echo (set_color green)"⟳ RELOADED" (set_color normal)'
-abbr -a r 'source $DOTFILES_DIR/fish/config.fish && clear && echo (set_color green)"⟳ RELOADED" (set_color normal)'
+abbr -a r 'source $DOTFILES_DIR/fish/config.fish && clear'
 
 # Clear screen
-abbr -a c 'clear'
+abbr -a c 'clear && clear'
 
 
 # ============================= Useful Abbreviations - full ================================
