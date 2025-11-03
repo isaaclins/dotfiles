@@ -1,7 +1,7 @@
 {
   "logo": {
     "type": "command-raw",
-    "source": "ascii-image-converter ~/.config/fastfetch/barbhut.png --dimensions 75,30 --color -m ' barbhut' -c"
+    "source": "ascii-image-converter ~/.config/fastfetch/barbhut.png --dimensions 75,30 --color -m ' barbhut' -c "
   },
   "display": {
     "separator": " ",
@@ -85,7 +85,7 @@
       "key": "{$1}\u001b[32m BATTERY\u001b[0m",
       "shell": "/bin/sh",
       "param": "-c",
-      "text": "perc=$(pmset -g batt | grep -Eo '[0-9]+%' | head -n1 | tr -d '%'); [ -n \"$perc\" ] || perc=0; python3 -c \"import math; width=30; perc=$perc; filled=int(round(width*perc/100)); filled=max(0, min(width, filled)); bar='░'*(width-filled)+'█'*filled; print(bar, end='')\"",
+      "text": "perc=$(pmset -g batt | grep -Eo '[0-9]+%' | head -n1 | tr -d '%'); [ -n \"$perc\" ] || perc=0; python3 -c \"import math; width=30; perc=$perc; filled=int(round(width*perc/100)); filled=max(0, min(width, filled)); bar='░'*(width-filled)+'█'*filled; print(bar, end='')\" | rev",
       "format": "{result}"
     },
     {
