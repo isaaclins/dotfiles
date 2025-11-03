@@ -5,7 +5,7 @@
 # ============================= General Settings ===============================
 if status is-interactive
     # Commands to run in interactive sessions can go here
-    set fish_greeting # Disable greeting
+    set fish_greeting "$(echo 'helloworld')"
     
     # Set colors for ls command
     set -gx LSCOLORS gxfxcxdxbxegedabagacad
