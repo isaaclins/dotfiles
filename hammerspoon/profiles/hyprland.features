@@ -1,0 +1,123 @@
+Feature: Basic Tiling
+  Scenario: First window opens
+    Given profile 'hyprland' is running
+    When I open a single window
+    And Padding is set to 10 
+    Then the window has 10 px of padding from all sites of the screen.
+
+  Scenario: Second window opens
+    Given one tiled window is open
+    When I open a second window
+    Then both windows are split evenly side-by-side
+    And the focus is on the newly opened window
+
+  Scenario: Third window opens
+    Given two tiled windows are open
+    When I open a third window
+    Then the layout splits based on the master/slave strategy
+    And the master window stays in its position
+    And the two slave windows share the remaining space
+
+Feature: Window Focus
+  Scenario: Focus follows mouse
+    Given multiple tiled windows are open
+    When I move my mouse cursor over a window
+    Then that window becomes focused
+
+  Scenario: Focus with keyboard
+    Given multiple tiled windows are open
+    When I press the keybinding to move focus right
+    Then the right-hand window is focused
+
+Feature: Window Splitting
+  Scenario: Split direction
+    Given a window is focused
+    When I press the keybinding to split vertically
+    And I open a new window
+    Then the new window appears stacked vertically relative to the focused window
+
+  Scenario: Alternate split
+    Given a window is focused
+    When I press the keybinding to split horizontally
+    And I open a new window
+    Then the new window appears stacked horizontally relative to the focused window
+
+Feature: Floating vs Tiling
+  Scenario: Force a window to float
+    Given a tiled window is open
+    When I toggle float mode for that window
+    Then the window is no longer part of the tiling tree
+    And it can be freely moved and resized
+
+  Scenario: Return a window to tiling
+    Given a floating window is open
+    When I toggle float mode off
+    Then the window rejoins the tiling layout
+    And space is redistributed automatically
+
+Feature: Resizing and Gaps
+  Scenario: Adjust master/slave ratio
+    Given two tiled windows are open
+    When I resize the master area with a keybinding
+    Then the master window grows
+    And the slave window shrinks proportionally
+
+  Scenario: Gaps between windows
+    Given tiling windows are open
+    When gaps are configured
+    Then space is placed between windows according to the gap size
+
+Feature: Workspaces
+  Scenario: Move a window to another workspace
+    Given multiple tiled windows are open
+    When I send one window to workspace 2
+    Then the window disappears from workspace 1
+    And appears in workspace 2 in the tiling layout
+
+  Scenario: Switch workspaces
+    Given multiple workspaces have windows
+    When I switch to workspace 2
+    Then the windows from workspace 2 are shown
+    And windows from workspace 1 are hidden
+
+Feature: Special Workspaces
+  Scenario: Scratchpad workspace
+    Given a window is marked as scratchpad
+    When I toggle the scratchpad
+    Then the window appears floating above the current workspace
+    And hides again when toggled off
+
+Feature: Window Swapping
+  Scenario: Swap tiled windows
+    Given multiple tiled windows are open
+    When I use the swap keybinding on two windows
+    Then their positions in the tiling layout are swapped
+
+Feature: Stacking & Tabs
+  Scenario: Stack windows
+    Given two tiled windows are focused in stacking mode
+    When I stack them
+    Then they occupy the same space
+    And only one is visible at a time
+    And I can cycle between them
+
+Feature: Fullscreen
+  Scenario: Toggle fullscreen
+    Given a tiled window is focused
+    When I press the fullscreen keybinding
+    Then the window covers the entire monitor
+    And tiling layout is temporarily suspended
+
+Feature: Monitors
+  Scenario: Move window to another monitor
+    Given two monitors are connected
+    And a window is tiled on monitor 1
+    When I move it to monitor 2
+    Then it joins the tiling layout of monitor 2
+    And monitor 1 redistributes its windows
+
+Feature: Rules
+  Scenario: Apply window rules
+    Given I have configured a rule for "firefox" to float
+    When I open Firefox
+    Then it always opens floating instead of tiled
