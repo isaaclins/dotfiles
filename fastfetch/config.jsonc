@@ -1,7 +1,7 @@
 {
   "logo": {
     "type": "command-raw",
-    "source": "ascii-image-converter ~/.config/fastfetch/barbhut.png --dimensions 75,30 --color -m ' barbhut' -c "
+    "source": "ascii-image-converter ~/.config/fastfetch/barbhut.png --dimensions 40,20 --color -m ' barbhut' -c "
   },
   "display": {
     "separator": " ",
