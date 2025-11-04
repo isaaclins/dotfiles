@@ -28,12 +28,12 @@
     {
       "type": "title",
       "key": "{$1}\u001b[34m  USERNAME\u001b[0m",
-      "format": "{user-name} "
+      "format": "{user-name}"
     },
     {
       "type": "localip",
       "key": "{$1}\u001b[34m  HOST IP\u001b[0m",
-      "format": "{ipv4} ",
+      "format": "                      {ipv4}",
       "showIpv4": true,
       "showIpv6": false,
       "showPrefixLen": false,
@@ -91,7 +91,7 @@
     {
       "type": "battery",
       "key": "{$1}\u001b[32m    > USAGE\u001b[0m",
-      "format": "[{capacity}]{?status} [{status}]{?}"
+      "format": "[{status}]            [{capacity}]{?status}{?}"
     },
     {
       "type": "disk",
@@ -141,7 +141,7 @@
       "type": "sound",
       "key": "{$1}\u001b[35m SOUND OUTPUT/VOLUME\u001b[0m",
       "soundType": "main",
-      "format": "{name}{?volume-percentage}  /   [{volume-percentage}]{?}"
+      "format": "{name}{?volume-percentage}  /  [{volume-percentage}]{?}"
     },
     {
       "type": "uptime",
