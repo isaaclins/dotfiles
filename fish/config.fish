@@ -5,7 +5,7 @@
 # ============================= General Settings ===============================
 if status is-interactive
     # Commands to run in interactive sessions can go here
-    set fish_greeting "$(echo 'helloworld')"
+    # set fish_greeting "$(fastfetch)" # <--- this is too slow, so we'll improve the tool manually OR just use a custom prompt
     
     # Set colors for ls command
     set -gx LSCOLORS gxfxcxdxbxegedabagacad
