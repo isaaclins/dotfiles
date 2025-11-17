@@ -15,7 +15,6 @@ IFS=$'\n\t'
 
 SCRIPT_NAME="$(basename "$0")"
 
-# Colored output helpers (only if stdout is a TTY)
 if [ -t 1 ]; then
     BOLD='\033[1m'; RED='\033[31m'; GREEN='\033[32m'; YELLOW='\033[33m'; BLUE='\033[34m'; RESET='\033[0m'
 else
@@ -52,79 +51,15 @@ Environment:
                           containing this script if not set.
 EOF
 }
+
 YES=0
 SET_DEFAULT_FISH=0
-        if ! brew install --cask "$cask"; then
-            log_warn "Failed to install $cask via brew; continuing."
-        fi
+DOTFILES_DIR_ARG=0
+PYTHON_BIN=""
 
-while [ $# -gt 0 ]; do
-    case "$1" in
-        -y|--yes)
-            YES=1
-            [Yy]*)
-                log_info "Installing $cask..."
-            PYTHON_BIN=""
-                if ! brew install --cask "$cask"; then
-                    log_warn "Failed to install $cask via brew; continuing."
-                fi
-                break
-                ;;
-        -d|--dotfiles-dir)
-            if [ $# -lt 2 ]; then
-                log_error "Missing PATH for $1"
-                usage
-                exit 1
-            fi
-            DOTFILES_DIR="$2"
-            DOTFILES_DIR_ARG=1
-            shift
-            ;;
-        --set-default-fish)
-            SET_DEFAULT_FISH=1
-            ;;
-        -h|--help)
-            usage
-            exit 0
-            ;;
-        *)
-            log_error "Unknown option: $1"
-            usage
-            exit 1
-            ;;
-    esac
-    shift
-done
-
-log_info "🚀 Starting dotfiles setup..."
-
-# Default DOTFILES_DIR to the folder containing this script if not provided
-DEFAULT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-DOTFILES_DIR="${DOTFILES_DIR:-$DEFAULT_DIR}"
-
-if [ $YES -eq 0 ] && [ ${DOTFILES_DIR_ARG:-0} -eq 0 ]; then
-    read -rp "Enter the path to your dotfiles directory [${DOTFILES_DIR}]: " _input || true
-    if [ -n "${_input:-}" ]; then
-        DOTFILES_DIR="${_input}"
-    fi
-fi
-
-if [ ! -d "$DOTFILES_DIR" ]; then
-    log_error "DOTFILES_DIR does not exist: $DOTFILES_DIR"
-    exit 1
-fi
-
-if command -v launchctl >/dev/null 2>&1; then
-    launchctl setenv DOTFILES_DIR "$DOTFILES_DIR" || true
-    log_ok "DOTFILES_DIR is set to $(launchctl getenv DOTFILES_DIR 2>/dev/null || echo "$DOTFILES_DIR")"
-else
-    export DOTFILES_DIR
-    log_ok "DOTFILES_DIR exported for this session: $DOTFILES_DIR"
-fi
-
-DEFAULT_HS_CONFIG_DIR="$HOME/.config/hammerspoon"
-HS_CONFIG_DIR="${HS_CONFIG:-$DEFAULT_HS_CONFIG_DIR}"
-export HS_CONFIG="$HS_CONFIG_DIR"
+DOTFILES_DIR="${DOTFILES_DIR:-$(cd "$(dirname "$0")" && pwd)}"
+HS_CONFIG_DIR="$HOME/.hammerspoon"
+FISH_EXPORT_FILE="$HOME/.config/fish/conf.d/dotfiles_exports.fish"
 
 setup_brew_env() {
     if [ -x "/opt/homebrew/bin/brew" ]; then
@@ -174,138 +109,6 @@ brew_cask_installed() {
     brew list --cask --versions "$1" >/dev/null 2>&1
 }
 
-install_formula() {
-    local formula="$1"
-    if brew_formula_installed "$formula"; then
-        log_ok "$formula is already installed (formula)."
-        return 0
-    fi
-    if [ $YES -eq 1 ]; then
-        log_info "Installing $formula..."
-        if ! brew install "$formula"; then
-            log_warn "Failed to install $formula via brew; continuing."
-            return 1
-        fi
-        return 0
-    fi
-    while true; do
-        read -rp "Do you want to install $formula (formula)? (y/n): " yn
-        case $yn in
-            [Yy]*)
-                log_info "Installing $formula..."
-                if ! brew install "$formula"; then
-                    log_warn "Failed to install $formula via brew; continuing."
-                    return 1
-                fi
-                break
-                ;;
-            [Nn]*) log_warn "Skipping $formula installation."; break ;;
-            *) echo "Please answer yes (y) or no (n)." ;;
-        esac
-    done
-    return 0
-}
-
-install_cask() {
-    local cask="$1"
-    if ! brew info --cask "$cask" >/dev/null 2>&1; then
-        log_warn "Cask not found: $cask"
-        return 1
-    fi
-
-    if cask_bundle_present "$cask"; then
-        return 0
-    fi
-
-    if brew_cask_installed "$cask"; then
-        log_ok "$cask is already installed (cask)."
-        return 0
-    fi
-    if [ $YES -eq 1 ]; then
-        log_info "Installing $cask (cask)..."
-
-cask_bundle_present() {
-    local cask="$1"
-
-    if [ -z "$PYTHON_BIN" ] || [ ! -x "$PYTHON_BIN" ]; then
-        return 1
-    fi
-
-    local json
-    if ! json="$(brew info --cask --json=v2 "$cask" 2>/dev/null)"; then
-        return 1
-    fi
-
-    local -a app_names=()
-    while IFS= read -r name; do
-        [ -n "$name" ] && app_names+=("$name")
-    done < <(printf '%s' "$json" | python3 - <<'PY'
-    done < <(printf '%s' "$json" | "$PYTHON_BIN" - <<'PY'
-        if ! brew install --cask "$cask"; then
-            log_warn "Failed to install $cask via brew; continuing."
-            return 1
-        fi
-        return 0
-    fi
-    while true; do
-        read -rp "Do you want to install $cask (cask)? (y/n): " yn
-        case $yn in
-            [Yy]*)
-                log_info "Installing $cask..."
-                if ! brew install --cask "$cask"; then
-                    log_warn "Failed to install $cask via brew; continuing."
-                    return 1
-                fi
-                break
-                ;;
-            [Nn]*) log_warn "Skipping $cask installation."; break ;;
-            *) echo "Please answer yes (y) or no (n)." ;;
-        esac
-    done
-    return 0
-}
-
-install_cask_with_fallback() {
-    # Try each provided cask name until one succeeds
-
-    if [ ${#app_names[@]} -eq 0 ]; then
-        return 1
-    fi
-
-    local search_dirs=(
-        "/Applications"
-        "/Applications/Utilities"
-        "$HOME/Applications"
-    )
-
-    local name dir
-    for name in "${app_names[@]}"; do
-        for dir in "${search_dirs[@]}"; do
-            if [ -e "$dir/$name" ]; then
-                log_ok "$cask app detected at $dir/$name (skipping brew cask)."
-                return 0
-            fi
-        done
-    done
-
-    return 1
-}
-    local tried=()
-    for candidate in "$@"; do
-        if brew info --cask "$candidate" >/dev/null 2>&1; then
-            if install_cask "$candidate"; then
-                return 0
-            fi
-        else
-            tried+=("$candidate")
-        fi
-    done
-    if [ ${#tried[@]} -gt 0 ]; then
-        log_warn "No available cask found among: ${tried[*]}"
-    fi
-    return 1
-}
-
 ensure_command_line_tools() {
     if xcode-select -p >/dev/null 2>&1; then
         log_ok "Command Line Tools already installed."
@@ -344,6 +147,46 @@ ensure_command_line_tools() {
     done
 }
 
+install_formula() {
+    local formula="$1"
+    if brew_formula_installed "$formula"; then
+        log_ok "$formula is already installed (formula)."
+        return 0
+    fi
+
+    if [ $YES -eq 1 ]; then
+        log_info "Installing $formula..."
+        if ! brew install "$formula"; then
+            log_warn "Failed to install $formula via brew; continuing."
+            return 1
+        fi
+        return 0
+    fi
+
+    while true; do
+        read -rp "Do you want to install $formula (formula)? (y/n): " yn
+        case $yn in
+            [Yy]*)
+                log_info "Installing $formula..."
+                if ! brew install "$formula"; then
+                    log_warn "Failed to install $formula via brew; continuing."
+                    return 1
+                fi
+                break
+                ;;
+            [Nn]*)
+                log_warn "Skipping $formula installation."
+                break
+                ;;
+            *)
+                echo "Please answer yes (y) or no (n)."
+                ;;
+        esac
+    done
+
+    return 0
+}
+
 ensure_python() {
     if [ -n "$PYTHON_BIN" ] && [ -x "$PYTHON_BIN" ]; then
         return 0
@@ -373,21 +216,131 @@ ensure_python() {
     return 1
 }
 
-ensure_line_in_file() {
-    local file="$1"
-    local line="$2"
+cask_bundle_present() {
+    local cask="$1"
 
-    mkdir -p "$(dirname "$file")"
-    if [ ! -f "$file" ]; then
-        touch "$file"
-    fi
-
-    if grep -Fqx "$line" "$file" >/dev/null 2>&1; then
+    if [ -z "$PYTHON_BIN" ] || [ ! -x "$PYTHON_BIN" ]; then
         return 1
     fi
 
-    printf '%s\n' "$line" >>"$file"
-    return 0
+    local json
+    json="$(brew info --cask --json=v2 "$cask" 2>/dev/null)" || return 1
+
+    local -a app_names=()
+    while IFS= read -r name; do
+        [ -n "$name" ] && app_names+=("$name")
+    done < <(printf '%s' "$json" | "$PYTHON_BIN" - <<'PY'
+import json, sys
+try:
+    data = json.load(sys.stdin)
+except Exception:
+    sys.exit(0)
+
+apps = set()
+
+def gather(node):
+    if isinstance(node, str):
+        if node.endswith('.app'):
+            apps.add(node)
+    elif isinstance(node, list):
+        for item in node:
+            gather(item)
+    elif isinstance(node, dict):
+        for value in node.values():
+            gather(value)
+
+for cask in data.get('casks', []):
+    for artifact in cask.get('artifacts', []):
+        gather(artifact)
+
+for app in sorted(apps):
+    print(app)
+PY
+)
+
+    if [ ${#app_names[@]} -eq 0 ]; then
+        return 1
+    fi
+
+    local search_dirs=(
+        "/Applications"
+        "/Applications/Utilities"
+        "$HOME/Applications"
+    )
+
+    local name dir
+    for name in "${app_names[@]}"; do
+        for dir in "${search_dirs[@]}"; do
+            if [ -e "$dir/$name" ]; then
+                log_ok "$cask app detected at $dir/$name (skipping brew cask)."
+                return 0
+            fi
+        done
+    done
+
+    return 1
+}
+
+install_cask() {
+    local cask="$1"
+
+    if ! brew info --cask "$cask" >/dev/null 2>&1; then
+        log_warn "Cask not found: $cask"
+        return 1
+    fi
+
+    if cask_bundle_present "$cask"; then
+        return 0
+    fi
+
+    if brew_cask_installed "$cask"; then
+        log_ok "$cask is already installed (cask)."
+        return 0
+    fi
+
+    if [ $YES -eq 1 ]; then
+        log_info "Installing $cask (cask)..."
+        if brew install --cask "$cask"; then
+            return 0
+        fi
+        log_warn "Failed to install $cask via brew; continuing."
+        return 1
+    fi
+
+    while true; do
+        read -rp "Do you want to install $cask (cask)? (y/n): " yn
+        case $yn in
+            [Yy]*)
+                log_info "Installing $cask..."
+                if brew install --cask "$cask"; then
+                    return 0
+                fi
+                log_warn "Failed to install $cask via brew; continuing."
+                return 1
+                ;;
+            [Nn]*)
+                log_warn "Skipping $cask installation."
+                return 0
+                ;;
+            *)
+                echo "Please answer yes (y) or no (n)."
+                ;;
+        esac
+    done
+}
+
+install_cask_with_fallback() {
+    local candidate
+    for candidate in "$@"; do
+        if brew info --cask "$candidate" >/dev/null 2>&1; then
+            if install_cask "$candidate"; then
+                return 0
+            fi
+        fi
+    done
+
+    log_warn "No suitable cask found among: $*"
+    return 1
 }
 
 set_shell_export() {
@@ -483,32 +436,81 @@ configure_shell_env() {
     fi
 
     if command -v fish >/dev/null 2>&1; then
-        fish -c "set -Ux HS_CONFIG '$HS_CONFIG_DIR'" || log_warn "Failed to set HS_CONFIG in fish universal variables"
+        if set_shell_export "$FISH_EXPORT_FILE" "HS_CONFIG" "$HS_CONFIG_DIR"; then
+            log_ok "Updated HS_CONFIG export in fish conf.d"
+        else
+            log_info "HS_CONFIG export already up to date in fish conf.d"
+        fi
+    fi
+}
+
+set_default_shell() {
+    local target_shell="$1"
+
+    if [ -z "$target_shell" ]; then
+        log_warn "No shell specified for set_default_shell."
+        return 1
     fi
 
-    if command -v launchctl >/dev/null 2>&1; then
-        launchctl setenv HS_CONFIG "$HS_CONFIG_DIR" || true
+    local shell_path
+    shell_path="$(command -v "$target_shell")" || {
+        log_warn "Shell not found in PATH: $target_shell"
+        return 1
+    }
+
+    if [ "$SHELL" = "$shell_path" ]; then
+        log_ok "$target_shell is already the default shell."
+        return 0
+    fi
+
+    if ! grep -Fxq "$shell_path" /etc/shells; then
+        if [ $YES -eq 1 ]; then
+            log_info "Adding $shell_path to /etc/shells (requires sudo)..."
+            if ! echo "$shell_path" | sudo tee -a /etc/shells >/dev/null; then
+                log_warn "Failed to add $shell_path to /etc/shells."
+                return 1
+            fi
+        else
+            log_warn "$shell_path is not in /etc/shells. Add it manually and rerun."
+            return 1
+        fi
+    fi
+
+    if [ $YES -eq 1 ]; then
+        log_info "Changing default shell to $target_shell..."
+        if chsh -s "$shell_path"; then
+            log_ok "Default shell changed to $target_shell."
+        else
+            log_warn "Failed to change default shell to $target_shell."
+        fi
+    else
+        log_warn "Skipping default shell change. Run with --set-default-fish or use -y for non-interactive."
     fi
 }
 
 deploy_hammerspoon() {
-    local hs_src="$DOTFILES_DIR/hammerspoon"
+    local hammerspoon_src="$DOTFILES_DIR/hammerspoon"
+    local hammerspoon_dest="$HOME/.hammerspoon"
 
-    if [ ! -d "$hs_src" ]; then
-        log_info "No hammerspoon directory found in dotfiles; skipping."
-        return 0
+    if [ ! -d "$hammerspoon_src" ]; then
+        log_warn "Hammerspoon config directory not found at $hammerspoon_src"
+        return 1
     fi
 
-    mkdir -p "$HS_CONFIG_DIR"
+    link_path "$hammerspoon_src" "$hammerspoon_dest"
+    HS_CONFIG_DIR="$hammerspoon_dest"
 
-    for path in "$hs_src"/*; do
-        [ -e "$path" ] || continue
-        local name
-        name="$(basename "$path")"
-        link_path "$path" "$HS_CONFIG_DIR/$name"
-    done
+    if command -v defaults >/dev/null 2>&1; then
+        log_info "Pointing Hammerspoon at $HS_CONFIG_DIR/init.lua..."
+        defaults write org.hammerspoon.Hammerspoon MJConfigFile "$HS_CONFIG_DIR/init.lua" || true
+    fi
 
-    defaults write org.hammerspoon.Hammerspoon MJConfigFile "$HS_CONFIG_DIR/init.lua" 2>/dev/null || true
+    if command -v osascript >/dev/null 2>&1; then
+        log_info "Restarting Hammerspoon for configuration reload..."
+        osascript -e 'tell application "Hammerspoon" to quit' || true
+        sleep 1
+        osascript -e 'tell application "Hammerspoon" to activate' || true
+    fi
 }
 
 deploy_fish() {
@@ -516,161 +518,229 @@ deploy_fish() {
     local fish_dest="$HOME/.config/fish"
 
     if [ ! -d "$fish_src" ]; then
-        log_info "No fish directory found in dotfiles; skipping."
-        return 0
+        log_warn "Fish config directory not found at $fish_src"
+        return 1
     fi
 
     link_path "$fish_src" "$fish_dest"
 }
 
-run_brewfile() {
-    local brewfile="$DOTFILES_DIR/Brewfile"
-    if [ -f "$brewfile" ]; then
-        log_info "Applying Brewfile..."
-        brew bundle --file "$brewfile" || log_warn "brew bundle encountered issues"
-    fi
-}
+deploy_git() {
+    local git_src="$DOTFILES_DIR/git"
+    local git_dest="$HOME/.config/git"
 
-set_default_shell() {
-    if [ $SET_DEFAULT_FISH -eq 0 ]; then
-        return 0
-    fi
-
-    local fish_path
-    fish_path="$(command -v fish || true)"
-
-    if [ -z "$fish_path" ]; then
-        log_warn "Fish shell not found; cannot set as default shell."
-        return 0
-    fi
-
-    if ! grep -Fxq "$fish_path" /etc/shells >/dev/null 2>&1; then
-        if command -v sudo >/dev/null 2>&1; then
-            log_info "Adding $fish_path to /etc/shells (sudo may prompt)..."
-            echo "$fish_path" | sudo tee -a /etc/shells >/dev/null || {
-                log_warn "Failed to add $fish_path to /etc/shells"
-                return 1
-            }
-        else
-            log_warn "sudo unavailable; cannot add $fish_path to /etc/shells"
-            return 1
-        fi
-    fi
-
-    if [ "${SHELL:-}" = "$fish_path" ]; then
-        log_ok "Fish is already the default shell."
-        return 0
-    fi
-
-    if chsh -s "$fish_path"; then
-        log_ok "Default shell changed to fish ($fish_path)."
-    else
-        log_warn "Failed to change default shell to fish."
-    fi
-}
-
-mas_signed_in() {
-    command -v mas >/dev/null 2>&1 || return 1
-    mas account >/dev/null 2>&1
-}
-
-mas_app_installed() {
-    local app_id="$1"
-    command -v mas >/dev/null 2>&1 || return 1
-    mas list | awk '{print $1}' | grep -qx "$app_id"
-}
-
-install_mas_app() {
-    local app_name="$1"
-    local app_id="$2"
-    # Ensure mas is available
-    if ! command -v mas >/dev/null 2>&1; then
-        install_formula mas || true
-    fi
-
-    if ! command -v mas >/dev/null 2>&1; then
-        log_warn "mas CLI not available; cannot install ${app_name} from App Store."
+    if [ ! -d "$git_src" ]; then
+        log_warn "Git config directory not found at $git_src"
         return 1
     fi
 
-    if ! mas_signed_in; then
-        log_warn "Not signed into the Mac App Store. Skipping ${app_name} installation."
-        return 0
+    link_path "$git_src" "$git_dest"
+
+    if [ -f "$git_dest/ignore" ]; then
+        git config --global core.excludesfile "$git_dest/ignore"
+        log_ok "Configured global gitignore."
+    fi
+}
+
+deploy_misc() {
+    link_path "$DOTFILES_DIR/htop/htoprc" "$HOME/.config/htop/htoprc"
+    link_path "$DOTFILES_DIR/neofetch/config.conf" "$HOME/.config/neofetch/config.conf"
+}
+
+run_brewfile() {
+    local brewfile="$DOTFILES_DIR/Brewfile"
+    if [ ! -f "$brewfile" ]; then
+        log_warn "No Brewfile found at $brewfile"
+        return 1
     fi
 
-    if mas_app_installed "$app_id"; then
-        log_ok "${app_name} is already installed via App Store."
+    log_info "Running brew bundle..."
+    if ! brew bundle --file="$brewfile"; then
+        log_warn "brew bundle reported errors; continuing."
+    fi
+}
+
+mas_install() {
+    local app_name="$1"
+    local app_id="$2"
+
+    if ! command -v mas >/dev/null 2>&1; then
+        log_warn "mas CLI not installed; skipping App Store apps."
+        return 1
+    fi
+
+    if mas list | awk '{print $1}' | grep -Fxq "$app_id"; then
+        log_ok "App Store app already installed: $app_name"
         return 0
     fi
 
     if [ $YES -eq 1 ]; then
-        log_info "Installing ${app_name} from the Mac App Store..."
-        mas install "$app_id" || log_warn "Failed to install ${app_name} via mas."
-        return 0
+        log_info "Installing $app_name from App Store..."
+        if mas install "$app_id"; then
+            return 0
+        fi
+        log_warn "Failed to install $app_name from App Store."
+        return 1
     fi
 
     while true; do
-        read -rp "Install ${app_name} from the Mac App Store now? (y/n): " yn
+        read -rp "Install $app_name from App Store? (y/n): " yn
         case $yn in
-            [Yy]*) log_info "Installing ${app_name}..."; mas install "$app_id" || log_warn "Failed to install ${app_name} via mas."; break ;;
-            [Nn]*) log_warn "Skipping ${app_name} installation."; break ;;
-            *) echo "Please answer yes (y) or no (n)." ;;
+            [Yy]*)
+                log_info "Installing $app_name from App Store..."
+                if mas install "$app_id"; then
+                    return 0
+                fi
+                log_warn "Failed to install $app_name from App Store."
+                return 1
+                ;;
+            [Nn]*)
+                log_warn "Skipping App Store install for $app_name."
+                return 0
+                ;;
+            *)
+                echo "Please answer yes (y) or no (n)."
+                ;;
         esac
     done
 }
 
-ensure_command_line_tools
-ensure_homebrew
-
-if command -v brew >/dev/null 2>&1; then
-    setup_brew_env || true
-    log_info "Updating Homebrew..."
-    brew update >/dev/null 2>&1 || log_warn "brew update encountered an issue"
-
-    ensure_python || true
-
-    run_brewfile
-
-    FORMULAE=(
-        git
-        fish
-        python
-        mas
-    )
-
-    for formula in "${FORMULAE[@]}"; do
-        install_formula "$formula" || true
+install_formulas() {
+    local formula
+    for formula in "$@"; do
+        install_formula "$formula"
     done
+}
 
-    CASKS=(
-        ghostty
-        cursor
-        hammerspoon
-        alt-tab
-        middleclick
-        appcleaner
-        horo
-        latest
-        tinkertool
-        aldente
-    )
-
-    for cask in "${CASKS[@]}"; do
-        install_cask "$cask" || true
+install_casks() {
+    local cask
+    for cask in "$@"; do
+        install_cask "$cask"
     done
+}
 
-    install_cask_with_fallback raycast || true
-    install_cask_with_fallback zen zen-browser || true
-    if ! install_cask_with_fallback amphetamine; then
-        install_mas_app "Amphetamine" 937984704 || true
+FORMULAE=(
+    git
+    fish
+    mas
+    curl
+    wget
+    jq
+    yq
+    fd
+    ripgrep
+    fzf
+    eza
+    bat
+    neovim
+    tmux
+    starship
+    htop
+    tree
+    python
+    node
+    pnpm
+)
+
+CASKS=(
+    1password
+    alfred
+    arc
+    discord
+    docker
+    figma
+    firefox
+    google-chrome
+    iterm2
+    linear-linear
+    obsidian
+    slack
+    spotify
+    visual-studio-code
+    zoom
+)
+
+main() {
+    log_info "Starting setup..."
+
+    if [ $DOTFILES_DIR_ARG -eq 0 ]; then
+        local default_dir="$DOTFILES_DIR"
+        read -rp "Dotfiles directory [$default_dir]: " input
+        if [ -n "$input" ]; then
+            DOTFILES_DIR="$(cd "$input" && pwd)"
+        fi
     fi
-else
-    log_warn "Homebrew is unavailable; skipping package installations."
-fi
 
-deploy_fish
-deploy_hammerspoon
-configure_shell_env
-set_default_shell
+    if [ ! -d "$DOTFILES_DIR" ]; then
+        log_error "Dotfiles directory not found: $DOTFILES_DIR"
+        exit 1
+    fi
 
-log_ok "✨ Dotfiles setup complete."
+    log_info "Using DOTFILES_DIR=$DOTFILES_DIR"
+
+    ensure_command_line_tools
+    ensure_homebrew
+
+    if command -v brew >/dev/null 2>&1; then
+        run_brewfile
+        ensure_python
+
+        install_formulas "${FORMULAE[@]}"
+
+        log_info "Installing commonly used casks..."
+        install_cask_with_fallback amphetamine amphetamine-beta
+        install_casks "${CASKS[@]}"
+    else
+        log_warn "Homebrew not available; skipping brew installs."
+    fi
+
+    deploy_hammerspoon
+    configure_shell_env
+
+    deploy_fish
+    deploy_git
+    deploy_misc
+
+    if command -v mas >/dev/null 2>&1; then
+        mas_install "Xcode" 497799835
+    fi
+
+    if [ $SET_DEFAULT_FISH -eq 1 ]; then
+        set_default_shell fish
+    fi
+
+    log_ok "Setup complete. 🚀"
+}
+
+while [ $# -gt 0 ]; do
+    case "$1" in
+        -y|--yes)
+            YES=1
+            shift
+            ;;
+        --set-default-fish)
+            SET_DEFAULT_FISH=1
+            shift
+            ;;
+        -d|--dotfiles-dir)
+            if [ $# -lt 2 ]; then
+                log_error "--dotfiles-dir requires a path argument"
+                exit 1
+            fi
+            DOTFILES_DIR="$(cd "$2" && pwd)"
+            DOTFILES_DIR_ARG=1
+            shift 2
+            ;;
+        -h|--help)
+            usage
+            exit 0
+            ;;
+        *)
+            log_error "Unknown option: $1"
+            usage
+            exit 1
+            ;;
+    esac
+done
+
+main "$@"
