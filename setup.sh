@@ -5,10 +5,8 @@
 # Usage:
 #   ./setup.sh [options]
 #
-# thats it. it should install everything like I want. not like you want.
-#
-# IMPORTANT STUFF:
-# - $DOTFILES_DIR is set to the path to your dotfiles directory
+# Run this on a fresh macOS install to bootstrap Homebrew, apply dotfiles, and
+# kick off the interactive installer TUI that reads from your Brewfile.
 
 set -euo pipefail
 IFS=$'\n\t'
@@ -55,7 +53,6 @@ EOF
 YES=0
 SET_DEFAULT_FISH=0
 DOTFILES_DIR_ARG=0
-PYTHON_BIN=""
 
 DOTFILES_DIR="${DOTFILES_DIR:-$(cd "$(dirname "$0")" && pwd)}"
 HS_CONFIG_DIR="$HOME/.hammerspoon"
@@ -101,14 +98,6 @@ ensure_homebrew() {
     done
 }
 
-brew_formula_installed() {
-    brew list --formula --versions "$1" >/dev/null 2>&1
-}
-
-brew_cask_installed() {
-    brew list --cask --versions "$1" >/dev/null 2>&1
-}
-
 ensure_command_line_tools() {
     if xcode-select -p >/dev/null 2>&1; then
         log_ok "Command Line Tools already installed."
@@ -147,200 +136,77 @@ ensure_command_line_tools() {
     done
 }
 
-install_formula() {
-    local formula="$1"
-    if brew_formula_installed "$formula"; then
-        log_ok "$formula is already installed (formula)."
+ensure_rust_toolchain() {
+    if command -v cargo >/dev/null 2>&1; then
+        log_ok "Rust toolchain already installed."
         return 0
     fi
 
-    if [ $YES -eq 1 ]; then
-        log_info "Installing $formula..."
-        if ! brew install "$formula"; then
-            log_warn "Failed to install $formula via brew; continuing."
-            return 1
-        fi
+    if ! command -v brew >/dev/null 2>&1; then
+        log_warn "Homebrew unavailable; cannot install Rust automatically."
+        return 1
+    fi
+
+    log_info "Installing Rust toolchain via Homebrew..."
+    if brew install rust; then
+        setup_brew_env || true
+    else
+        log_warn "brew install rust failed."
+    fi
+
+    if command -v cargo >/dev/null 2>&1; then
+        log_ok "Rust toolchain is ready."
         return 0
     fi
 
-    while true; do
-        read -rp "Do you want to install $formula (formula)? (y/n): " yn
-        case $yn in
-            [Yy]*)
-                log_info "Installing $formula..."
-                if ! brew install "$formula"; then
-                    log_warn "Failed to install $formula via brew; continuing."
-                    return 1
-                fi
-                break
-                ;;
-            [Nn]*)
-                log_warn "Skipping $formula installation."
-                break
-                ;;
-            *)
-                echo "Please answer yes (y) or no (n)."
-                ;;
-        esac
-    done
+    log_warn "Rust toolchain unavailable; skipping installer build."
+    return 1
+}
+
+run_brewfile() {
+    local brewfile="$DOTFILES_DIR/Brewfile"
+    if [ ! -f "$brewfile" ]; then
+        log_warn "No Brewfile found at $brewfile"
+        return 1
+    fi
+
+    log_info "Running brew bundle..."
+    if ! brew bundle --file="$brewfile"; then
+        log_warn "brew bundle reported errors; continuing."
+    fi
+}
+
+build_and_run_installer() {
+    local manifest="$DOTFILES_DIR/scripts/install_tools_tui/Cargo.toml"
+    if [ ! -f "$manifest" ]; then
+        log_warn "Installer manifest not found at $manifest; skipping TUI build."
+        return 1
+    fi
+
+    if ! command -v cargo >/dev/null 2>&1; then
+        log_warn "Cargo not available; skipping installer build."
+        return 1
+    fi
+
+    log_info "Building install_tools_tui (release)..."
+    if ! cargo build --release --manifest-path "$manifest"; then
+        log_error "Failed to build install_tools_tui."
+        return 1
+    fi
+
+    local binary="$DOTFILES_DIR/scripts/install_tools_tui/target/release/install_tools_tui"
+    if [ ! -x "$binary" ]; then
+        log_error "Built installer not found at $binary."
+        return 1
+    fi
+
+    log_info "Launching install_tools_tui..."
+    if ! BREWFILE_PATH="$DOTFILES_DIR/Brewfile" "$binary"; then
+        log_error "Installer TUI exited with an error."
+        return 1
+    fi
 
     return 0
-}
-
-ensure_python() {
-    if [ -n "$PYTHON_BIN" ] && [ -x "$PYTHON_BIN" ]; then
-        return 0
-    fi
-
-    if command -v python3 >/dev/null 2>&1; then
-        PYTHON_BIN="$(command -v python3)"
-        return 0
-    fi
-
-    if [ -x "/usr/bin/python3" ]; then
-        PYTHON_BIN="/usr/bin/python3"
-        return 0
-    fi
-
-    if command -v brew >/dev/null 2>&1; then
-        log_info "Installing python3 via Homebrew for setup helpers..."
-        if install_formula python; then
-            if command -v python3 >/dev/null 2>&1; then
-                PYTHON_BIN="$(command -v python3)"
-                return 0
-            fi
-        fi
-    fi
-
-    log_warn "Python 3 unavailable; app bundle detection will be skipped."
-    return 1
-}
-
-cask_bundle_present() {
-    local cask="$1"
-
-    if [ -z "$PYTHON_BIN" ] || [ ! -x "$PYTHON_BIN" ]; then
-        return 1
-    fi
-
-    local json
-    json="$(brew info --cask --json=v2 "$cask" 2>/dev/null)" || return 1
-
-    local -a app_names=()
-    while IFS= read -r name; do
-        [ -n "$name" ] && app_names+=("$name")
-    done < <(printf '%s' "$json" | "$PYTHON_BIN" - <<'PY'
-import json, sys
-try:
-    data = json.load(sys.stdin)
-except Exception:
-    sys.exit(0)
-
-apps = set()
-
-def gather(node):
-    if isinstance(node, str):
-        if node.endswith('.app'):
-            apps.add(node)
-    elif isinstance(node, list):
-        for item in node:
-            gather(item)
-    elif isinstance(node, dict):
-        for value in node.values():
-            gather(value)
-
-for cask in data.get('casks', []):
-    for artifact in cask.get('artifacts', []):
-        gather(artifact)
-
-for app in sorted(apps):
-    print(app)
-PY
-)
-
-    if [ ${#app_names[@]} -eq 0 ]; then
-        return 1
-    fi
-
-    local search_dirs=(
-        "/Applications"
-        "/Applications/Utilities"
-        "$HOME/Applications"
-    )
-
-    local name dir
-    for name in "${app_names[@]}"; do
-        for dir in "${search_dirs[@]}"; do
-            if [ -e "$dir/$name" ]; then
-                log_ok "$cask app detected at $dir/$name (skipping brew cask)."
-                return 0
-            fi
-        done
-    done
-
-    return 1
-}
-
-install_cask() {
-    local cask="$1"
-
-    if ! brew info --cask "$cask" >/dev/null 2>&1; then
-        log_warn "Cask not found: $cask"
-        return 1
-    fi
-
-    if cask_bundle_present "$cask"; then
-        return 0
-    fi
-
-    if brew_cask_installed "$cask"; then
-        log_ok "$cask is already installed (cask)."
-        return 0
-    fi
-
-    if [ $YES -eq 1 ]; then
-        log_info "Installing $cask (cask)..."
-        if brew install --cask "$cask"; then
-            return 0
-        fi
-        log_warn "Failed to install $cask via brew; continuing."
-        return 1
-    fi
-
-    while true; do
-        read -rp "Do you want to install $cask (cask)? (y/n): " yn
-        case $yn in
-            [Yy]*)
-                log_info "Installing $cask..."
-                if brew install --cask "$cask"; then
-                    return 0
-                fi
-                log_warn "Failed to install $cask via brew; continuing."
-                return 1
-                ;;
-            [Nn]*)
-                log_warn "Skipping $cask installation."
-                return 0
-                ;;
-            *)
-                echo "Please answer yes (y) or no (n)."
-                ;;
-        esac
-    done
-}
-
-install_cask_with_fallback() {
-    local candidate
-    for candidate in "$@"; do
-        if brew info --cask "$candidate" >/dev/null 2>&1; then
-            if install_cask "$candidate"; then
-                return 0
-            fi
-        fi
-    done
-
-    log_warn "No suitable cask found among: $*"
-    return 1
 }
 
 set_shell_export() {
@@ -547,119 +413,6 @@ deploy_misc() {
     link_path "$DOTFILES_DIR/neofetch/config.conf" "$HOME/.config/neofetch/config.conf"
 }
 
-run_brewfile() {
-    local brewfile="$DOTFILES_DIR/Brewfile"
-    if [ ! -f "$brewfile" ]; then
-        log_warn "No Brewfile found at $brewfile"
-        return 1
-    fi
-
-    log_info "Running brew bundle..."
-    if ! brew bundle --file="$brewfile"; then
-        log_warn "brew bundle reported errors; continuing."
-    fi
-}
-
-mas_install() {
-    local app_name="$1"
-    local app_id="$2"
-
-    if ! command -v mas >/dev/null 2>&1; then
-        log_warn "mas CLI not installed; skipping App Store apps."
-        return 1
-    fi
-
-    if mas list | awk '{print $1}' | grep -Fxq "$app_id"; then
-        log_ok "App Store app already installed: $app_name"
-        return 0
-    fi
-
-    if [ $YES -eq 1 ]; then
-        log_info "Installing $app_name from App Store..."
-        if mas install "$app_id"; then
-            return 0
-        fi
-        log_warn "Failed to install $app_name from App Store."
-        return 1
-    fi
-
-    while true; do
-        read -rp "Install $app_name from App Store? (y/n): " yn
-        case $yn in
-            [Yy]*)
-                log_info "Installing $app_name from App Store..."
-                if mas install "$app_id"; then
-                    return 0
-                fi
-                log_warn "Failed to install $app_name from App Store."
-                return 1
-                ;;
-            [Nn]*)
-                log_warn "Skipping App Store install for $app_name."
-                return 0
-                ;;
-            *)
-                echo "Please answer yes (y) or no (n)."
-                ;;
-        esac
-    done
-}
-
-install_formulas() {
-    local formula
-    for formula in "$@"; do
-        install_formula "$formula"
-    done
-}
-
-install_casks() {
-    local cask
-    for cask in "$@"; do
-        install_cask "$cask"
-    done
-}
-
-FORMULAE=(
-    git
-    fish
-    mas
-    curl
-    wget
-    jq
-    yq
-    fd
-    ripgrep
-    fzf
-    eza
-    bat
-    neovim
-    tmux
-    starship
-    htop
-    tree
-    python
-    node
-    pnpm
-)
-
-CASKS=(
-    1password
-    alfred
-    arc
-    discord
-    docker
-    figma
-    firefox
-    google-chrome
-    iterm2
-    linear-linear
-    obsidian
-    slack
-    spotify
-    visual-studio-code
-    zoom
-)
-
 main() {
     log_info "Starting setup..."
 
@@ -683,13 +436,11 @@ main() {
 
     if command -v brew >/dev/null 2>&1; then
         run_brewfile
-        ensure_python
-
-        install_formulas "${FORMULAE[@]}"
-
-        log_info "Installing commonly used casks..."
-        install_cask_with_fallback amphetamine amphetamine-beta
-        install_casks "${CASKS[@]}"
+        if ensure_rust_toolchain; then
+            build_and_run_installer || log_warn "Installer TUI encountered issues."
+        else
+            log_warn "Rust toolchain unavailable; skipping installer build."
+        fi
     else
         log_warn "Homebrew not available; skipping brew installs."
     fi
@@ -700,10 +451,6 @@ main() {
     deploy_fish
     deploy_git
     deploy_misc
-
-    if command -v mas >/dev/null 2>&1; then
-        mas_install "Xcode" 497799835
-    fi
 
     if [ $SET_DEFAULT_FISH -eq 1 ]; then
         set_default_shell fish
