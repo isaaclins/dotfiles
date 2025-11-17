@@ -734,3 +734,41 @@ function fff
         sleep 1
     end
 end
+function pdf2shots
+    if test (count $argv) -lt 1
+        echo "Usage: pdf2shots <pdf-file> [output-dir] [--combine]"
+        return 1
+    end
+
+    set pdf $argv[1]
+    if not test -f $pdf
+        echo "Error: File '$pdf' not found"
+        return 1
+    end
+
+    set outdir (or $argv[2] (basename $pdf .pdf))
+    set combine (contains --combine $argv)
+    mkdir -p $outdir
+
+    echo "Converting $pdf → $outdir/page-*.png ..."
+    magick -density 300 "$pdf" -quality 100 "$outdir/page-%03d.png"
+
+    if test $status -ne 0
+        echo "❌ Conversion failed."
+        return 1
+    end
+
+    if test $combine = 1
+        set combined "$outdir/combined.png"
+        echo "Combining all pages into one tall image..."
+        magick "$outdir/page-*.png" -append "$combined"
+
+        if test $status -eq 0
+            echo "✅ Combined image saved as: $combined"
+        else
+            echo "❌ Failed to combine images."
+        end
+    else
+        echo "✅ Individual page images saved in: $outdir/"
+    end
+end

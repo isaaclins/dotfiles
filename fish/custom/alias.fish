@@ -25,8 +25,8 @@ abbr -a ga 'git add '
 abbr -a gaa 'git add .'
 abbr -a gpll 'git pull'
 # open config
-abbr -a conf "open -a 'Cursor' $DOTFILES_DIR"
-abbr -a cur "open -a 'Cursor' ."
+abbr -a conf "code $DOTFILES_DIR"
+abbr -a cur "open -a 'VSCode' ."
 # The Fuck
 thefuck --alias | source
 abbr -a f 'fuck'
@@ -64,10 +64,7 @@ abbr -a nrs 'npm run start'
 abbr -a rh 'killall Hammerspoon >/dev/null 2>&1; open -a Hammerspoon && open -a Hammerspoon'
 
 abbr -a ff 'fastfetch '
+abbr -a fixpsst 'xattr -dr com.apple.quarantine /Applications/Psst.app/ && xattr -l /Applications/Psst.app/'
 
+abbr -a cls 'clear && clear'
 end
-
-
-
-
-
