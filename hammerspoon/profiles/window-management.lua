@@ -98,7 +98,8 @@ local function moveZenWithAppleScript(bounds)
     hs.osascript.applescript(script)
 end
 
-local function moveWindow(direction)
+local function moveWindow(direction, duration)
+    duration = duration or animationDuration
     local win = hs.window.focusedWindow()
     if not win then return end
 
@@ -146,7 +147,7 @@ local function moveWindow(direction)
                     actual.y, actual.w, actual.h))
             end)
         else
-            win:setFrame(newFrame, animationDuration)
+            win:setFrame(newFrame, duration)
             local actual = win:frame()
             print(string.format("%s: Actually moved to x=%.0f, y=%.0f, w=%.0f, h=%.0f", appName, actual.x, actual.y,
                 actual.w, actual.h))
@@ -164,11 +165,11 @@ local function moveWindow(direction)
                 newFrame = { x = f.x, y = f.y, w = f.w / 2, h = f.h }
             end
         end
+
         print(string.format("%s: Moving right to x=%.0f, y=%.0f, w=%.0f, h=%.0f", appName, newFrame.x, newFrame.y,
             newFrame.w, newFrame.h))
 
         if useAppleScript then
-            moveZenWithAppleScript(newFrame)
             moveZenWithAppleScript(newFrame)
             hs.timer.doAfter(0.1, function()
                 local actual = win:frame()
@@ -176,7 +177,7 @@ local function moveWindow(direction)
                     actual.y, actual.w, actual.h))
             end)
         else
-            win:setFrame(newFrame, animationDuration)
+            win:setFrame(newFrame, duration)
         end
     elseif direction == "up" then
         if win:isMinimized() then
@@ -210,7 +211,7 @@ local function moveWindow(direction)
                             actual.y, actual.w, actual.h))
                     end)
                 else
-                    win:setFrame(newFrame, animationDuration)
+                    win:setFrame(newFrame, duration)
                 end
             else
                 -- Maximize (fill full screen)
@@ -227,7 +228,7 @@ local function moveWindow(direction)
                             actual.y, actual.w, actual.h))
                     end)
                 else
-                    win:maximize(animationDuration)
+                    win:maximize(duration)
                 end
             end
         end
@@ -253,7 +254,7 @@ local function moveWindow(direction)
                     actual.y, actual.w, actual.h))
             end)
         else
-            win:setFrame(newFrame, animationDuration)
+            win:setFrame(newFrame, duration)
         end
 
         cycleIndex = (cycleIndex % #cornerPositions) + 1
@@ -261,9 +262,9 @@ local function moveWindow(direction)
 end
 
 -- Bind hotkeys
-hs.hotkey.bind({ "cmd" }, "left", function() moveWindow("left") end)
-hs.hotkey.bind({ "cmd" }, "right", function() moveWindow("right") end)
-hs.hotkey.bind({ "cmd" }, "up", function() moveWindow("up") end)
-hs.hotkey.bind({ "cmd" }, "down", function() moveWindow("down") end)
+hs.hotkey.bind({ "cmd" }, "left", function() moveWindow("left") end, nil, function() moveWindow("left", 0) end)
+hs.hotkey.bind({ "cmd" }, "right", function() moveWindow("right") end, nil, function() moveWindow("right", 0) end)
+hs.hotkey.bind({ "cmd" }, "up", function() moveWindow("up") end, nil, function() moveWindow("up", 0) end)
+hs.hotkey.bind({ "cmd" }, "down", function() moveWindow("down") end, nil, function() moveWindow("down", 0) end)
 
 hs.alert.show("Hammerspoon config loaded")
