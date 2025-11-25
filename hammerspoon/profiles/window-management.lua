@@ -130,7 +130,8 @@ local function moveWindow(direction)
             if nextScreen then
                 screen = nextScreen
                 f = getUsableFrame(screen)
-                newFrame = { x = f.x, y = f.y, w = f.w / 2, h = f.h }
+                -- When moving left to a new screen, we want to land on the RIGHT side of that screen first
+                newFrame = { x = f.x + f.w / 2, y = f.y, w = f.w / 2, h = f.h }
             end
         end
 
@@ -159,14 +160,15 @@ local function moveWindow(direction)
             if nextScreen then
                 screen = nextScreen
                 f = getUsableFrame(screen)
-                newFrame = { x = f.x + f.w / 2, y = f.y, w = f.w / 2, h = f.h }
+                -- When moving right to a new screen, we want to land on the LEFT side of that screen first
+                newFrame = { x = f.x, y = f.y, w = f.w / 2, h = f.h }
             end
         end
-
         print(string.format("%s: Moving right to x=%.0f, y=%.0f, w=%.0f, h=%.0f", appName, newFrame.x, newFrame.y,
             newFrame.w, newFrame.h))
 
         if useAppleScript then
+            moveZenWithAppleScript(newFrame)
             moveZenWithAppleScript(newFrame)
             hs.timer.doAfter(0.1, function()
                 local actual = win:frame()
