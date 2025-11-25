@@ -1,8 +1,5 @@
-tap "espanso/espanso"
 tap "homebrew/core"
 tap "jesseduffield/lazydocker"
-tap "kanriapp/cask"
-tap "minio/stable"
 tap "thezoraiz/ascii-image-converter"
 # Next-generation aircrack with lots of new features
 brew "aircrack-ng"
@@ -44,8 +41,6 @@ brew "python@3.13"
 brew "gdb"
 # GitHub command-line tool
 brew "gh"
-# Development kit for the Java programming language
-brew "openjdk@21"
 # Multi-platform software reverse engineering framework
 brew "ghidra"
 # Interpreter for PostScript and PDF
@@ -54,8 +49,6 @@ brew "ghostscript"
 brew "git"
 # Open-source, cross-platform JavaScript runtime environment
 brew "node"
-# System monitoring dashboard for terminal
-brew "gtop"
 # HTTP load generator, ApacheBench (ab) replacement
 brew "hey"
 # Improved top (interactive process viewer)
@@ -76,8 +69,6 @@ brew "libimobiledevice"
 brew "lsusb"
 # Mac App Store command-line interface
 brew "mas"
-# Development kit for the Java programming language
-brew "openjdk"
 # Java-based project management
 brew "maven"
 # Polyglot runtime manager (asdf rust clone)
@@ -96,24 +87,18 @@ brew "ollama", restart_service: :changed
 brew "openjdk@11"
 # Development kit for the Java programming language
 brew "openjdk@17"
+# Development kit for the Java programming language
+brew "openjdk@20"
 # Swiss-army knife of markup format conversion
 brew "pandoc"
-# Drop-in MySQL replacement
-brew "percona-server", link: false
-# Open source hot backup tool for InnoDB and XtraDB databases
-brew "percona-xtrabackup"
 # Execute binaries from Python packages in isolated environments
 brew "pipx"
 # Package compiler and linker metadata toolkit
 brew "pkgconf"
-# Tool for managing OCI containers and pods
-brew "podman"
 # Cross-platform library for audio I/O
 brew "portaudio"
 # Python version management
 brew "pyenv"
-# Interpreted, interactive, object-oriented programming language
-brew "python@3.12"
 # Search tool like grep and The Silver Searcher
 brew "ripgrep"
 # Safe, concurrent, practical language
@@ -122,8 +107,6 @@ brew "rust"
 brew "rustscan"
 # Command-line tool to customize Spotify client
 brew "spicetify-cli"
-# Programmatically correct mistyped console commands
-brew "thefuck"
 # Display directories as trees (with optional color/HTML output)
 brew "tree"
 # Pager/text based browser
@@ -138,10 +121,6 @@ brew "yt-dlp"
 brew "zoxide"
 # A simple terminal UI for docker, written in Go
 brew "jesseduffield/lazydocker/lazydocker"
-# MinIO Client for object storage and filesystems
-brew "minio/stable/mc"
-# High Performance Object Storage compatible with Amazon S3 API
-brew "minio/stable/minio"
 # Convert images into ascii art
 brew "thezoraiz/ascii-image-converter/ascii-image-converter"
 # Enable Windows-like alt-tab
@@ -160,8 +139,6 @@ cask "buzz"
 cask "copyq"
 # Voice and text chat software
 cask "discord"
-# Cross-platform Text Expander written in Rust
-cask "espanso"
 # Software reverse engineering (SRE) suite of tools
 cask "ghidra"
 # Terminal emulator that uses platform-native UI and GPU acceleration
@@ -172,18 +149,12 @@ cask "google-chrome"
 cask "gstreamer-runtime"
 # HTTP and GraphQL Client
 cask "insomnia"
-# Menu bar manager
-cask "jordanbaird-ice"
-# Offline Kanban board app
-cask "kanri"
 # GPU-based terminal emulator
 cask "kitty"
 # Custom Discord client
 cask "legcord"
 # Full TeX Live distribution without GUI applications
 cask "mactex-no-gui"
-# IMAP email client
-cask "mailmate"
 # Utility to extend trackpad functionality
 cask "middleclick"
 # Reverse proxy, secure introspectable tunnels to localhost
@@ -196,14 +167,11 @@ cask "psst"
 cask "scroll-reverser"
 # System monitor for the menu bar
 cask "stats"
-# Menu bar pomodoro timer
-cask "tomatobar"
 # Compatibility layer to run Windows applications
 cask "wine-stable"
 # Network protocol analyzer
 cask "wireshark-app"
 mas "Amphetamine", id: 937984704
-mas "Bitwarden 2", id: 1352778147
 mas "CrystalFetch", id: 6454431289
 mas "FocusFlights", id: 6648771147
 mas "Horo", id: 1437226581
@@ -256,4 +224,3 @@ go "github.com/golangci/golangci-lint/cmd/golangci-lint"
 go "golang.org/x/tools/gopls"
 go "github.com/securego/gosec/v2/cmd/gosec"
 go "honnef.co/go/tools/cmd/staticcheck"
-
