@@ -216,3 +216,6 @@ if not set -q FISH_LOG_ACTIVE
 end
 
 
+
+# Added by Antigravity
+fish_add_path /Users/isaaclins/.antigravity/antigravity/bin
