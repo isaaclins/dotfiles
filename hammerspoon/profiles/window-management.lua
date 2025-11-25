@@ -5,23 +5,19 @@
 -- AUTHOR_URL: https://github.com/isaaclins
 -- Window management
 local cycleIndex = 1
+local hasCycled = false
 
--- Animation settings
-local animationDuration = 0.2 -- Fast but smooth (200ms)
-hs.window.animationDuration = animationDuration
-
--- Set easing function to cubic-bezier for smooth in/out
--- This creates a smooth acceleration and deceleration
-local function cubicBezierEaseInOut(t)
-    if t < 0.5 then
-        return 4 * t * t * t
-    else
-        return 1 - ((-2 * t + 2) ^ 3) / 2
-    end
+-- Helper to check if window is roughly at a frame
+local function isAtFrame(winFrame, targetFrame)
+    return math.abs(winFrame.x - targetFrame.x) < 20 and
+           math.abs(winFrame.y - targetFrame.y) < 20 and
+           math.abs(winFrame.w - targetFrame.w) < 20 and
+           math.abs(winFrame.h - targetFrame.h) < 20
 end
 
--- Apply custom easing function
-hs.window.setFrameCorrectness = true
+-- Animation settings
+local animationDuration = 0.2 -- Smooth animation
+hs.window.animationDuration = animationDuration
 
 -- Get the usable screen frame (accounts for menu bar, dock, etc.)
 local function getUsableFrame(screen)
@@ -128,6 +124,16 @@ local function moveWindow(direction)
     if direction == "left" then
         -- Left half
         local newFrame = { x = f.x, y = f.y, w = f.w / 2, h = f.h }
+
+        if isAtFrame(win:frame(), newFrame) then
+            local nextScreen = screen:toWest()
+            if nextScreen then
+                screen = nextScreen
+                f = getUsableFrame(screen)
+                newFrame = { x = f.x, y = f.y, w = f.w / 2, h = f.h }
+            end
+        end
+
         print(string.format("%s: Moving left to x=%.0f, y=%.0f, w=%.0f, h=%.0f", appName, newFrame.x, newFrame.y,
             newFrame.w, newFrame.h))
 
@@ -147,6 +153,16 @@ local function moveWindow(direction)
     elseif direction == "right" then
         -- Right half
         local newFrame = { x = f.x + f.w / 2, y = f.y, w = f.w / 2, h = f.h }
+
+        if isAtFrame(win:frame(), newFrame) then
+            local nextScreen = screen:toEast()
+            if nextScreen then
+                screen = nextScreen
+                f = getUsableFrame(screen)
+                newFrame = { x = f.x + f.w / 2, y = f.y, w = f.w / 2, h = f.h }
+            end
+        end
+
         print(string.format("%s: Moving right to x=%.0f, y=%.0f, w=%.0f, h=%.0f", appName, newFrame.x, newFrame.y,
             newFrame.w, newFrame.h))
 
@@ -214,6 +230,14 @@ local function moveWindow(direction)
             end
         end
     elseif direction == "down" then
+        if cycleIndex == 1 and hasCycled then
+            local nextScreen = screen:next()
+            if nextScreen then
+                screen = nextScreen
+            end
+        end
+        hasCycled = true
+
         local getFrame = cornerPositions[cycleIndex]
         local newFrame = getFrame(screen)
         print(string.format("%s: Cycling to position %d: x=%.0f, y=%.0f, w=%.0f, h=%.0f", appName, cycleIndex, newFrame
