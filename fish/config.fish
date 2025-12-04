@@ -7,6 +7,14 @@ if status is-interactive
     # Commands to run in interactive sessions can go here
     # set fish_greeting "$(fastfetch)" # <--- this is too slow, so we'll improve the tool manually OR just use a custom prompt
     
+    # Set default Java version (silent setup)
+    set -l default_java_version 21
+    set -l java_path "/opt/homebrew/opt/openjdk@$default_java_version"
+    if test -d $java_path
+        set -gx JAVA_HOME "$java_path/libexec/openjdk.jdk/Contents/Home"
+        fish_add_path --prepend "$JAVA_HOME/bin"
+    end
+    
     # Set colors for ls command
     set -gx LSCOLORS gxfxcxdxbxegedabagacad
     
