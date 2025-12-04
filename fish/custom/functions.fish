@@ -579,25 +579,47 @@ function setjava
         return 1
     end
     
-    # Check if Java version is installed via Homebrew
+    # Check if Java version is installed and linked via Homebrew
     set java_path "/opt/homebrew/opt/openjdk@$java_version"
+    set is_installed (brew list openjdk@$java_version 2>/dev/null)
+    
     if not test -d $java_path
-        echo "⚠️  Java $java_version is not installed via Homebrew."
-        echo -n "Would you like to install it? [y/N]: "
-        echo ""
-        echo "================================================"
-        read -l response
-        echo "================================================"
-        if test "$response" = "y" -o "$response" = "Y" -o "$response" = "yes"
-            echo "📦 Installing OpenJDK $java_version..."
-            if not brew install openjdk@$java_version
-                echo "❌ Failed to install OpenJDK $java_version"
+        if test -n "$is_installed"
+            # Installed but not linked
+            echo "⚠️  Java $java_version is installed but not linked."
+            echo "🔗 Linking OpenJDK $java_version..."
+            if not brew link openjdk@$java_version 2>/dev/null
+                # Try with --force if regular link fails
+                if not brew link --force openjdk@$java_version 2>/dev/null
+                    echo "❌ Failed to link OpenJDK $java_version"
+                    echo "Try running: sudo ln -sfn /opt/homebrew/opt/openjdk@$java_version/libexec/openjdk.jdk /Library/Java/JavaVirtualMachines/openjdk-$java_version.jdk"
+                    return 1
+                end
+            end
+            echo "✅ OpenJDK $java_version linked successfully"
+        else
+            # Not installed at all
+            echo "⚠️  Java $java_version is not installed via Homebrew."
+            echo -n "Would you like to install it? [y/N]: "
+            echo ""
+            echo "================================================"
+            read -l response
+            echo "================================================"
+            if test "$response" = "y" -o "$response" = "Y" -o "$response" = "yes"
+                echo "📦 Installing OpenJDK $java_version..."
+                if not brew install openjdk@$java_version
+                    echo "❌ Failed to install OpenJDK $java_version"
+                    return 1
+                end
+                echo "✅ OpenJDK $java_version installed successfully"
+                # Auto-link after install
+                echo "🔗 Linking OpenJDK $java_version..."
+                brew link openjdk@$java_version 2>/dev/null
+                or brew link --force openjdk@$java_version 2>/dev/null
+            else
+                echo "❌ Installation cancelled"
                 return 1
             end
-            echo "✅ OpenJDK $java_version installed successfully"
-        else
-            echo "❌ Installation cancelled"
-            return 1
         end
     end
     
